@@ -17,6 +17,13 @@ public void setFinishTime(LocalDateTime fTime){finishTime = fTime;}
 public LocalDateTime getFinishTime(){return finishTime;}
 public void addNotification(LocalDateTime note){notifications.add(note);}
 public TreeSet<LocalDateTime> getAllNotifications(){return notifications;}
-
+      /*  public LocalDateTime getFirst(){return notifications.first();}
+            public LocalDateTime getLast(){return notifications.last();}*/
+public boolean isNotificationNow(){
+    if (notifications.first().equals(LocalDateTime.now())){
+        notifications.remove(notifications.first());
+        return true;
+    }else return false;
+}
 
 }
