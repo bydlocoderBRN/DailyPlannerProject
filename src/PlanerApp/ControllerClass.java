@@ -11,4 +11,6 @@ public class ControllerClass {
     private TextField txtStartTime;
     @FXML
     private TextField txtFinishTime;
+    @FXML
+    private TextField txtNotificationTime;
 }

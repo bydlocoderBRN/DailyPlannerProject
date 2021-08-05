@@ -8,5 +8,9 @@
       <Button fx:id="btnTest" layoutX="365.0" layoutY="188.0" mnemonicParsing="false" text="Button" />
       <TextField fx:id="txtStartTime" layoutX="317.0" layoutY="52.0" />
       <TextField fx:id="txtFinishTime" layoutX="317.0" layoutY="105.0" />
+      <TextField fx:id="txtNotificationTime" layoutX="317.0" layoutY="151.0" />
+      <Label layoutX="229.0" layoutY="56.0" text="Start" />
+      <Label layoutX="229.0" layoutY="109.0" text="Finish" />
+      <Label layoutX="229.0" layoutY="155.0" text="Note" />
    </children>
 </AnchorPane>
