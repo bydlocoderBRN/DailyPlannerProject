@@ -7,6 +7,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Main extends Application {
     @Override
@@ -29,7 +30,13 @@ public class Main extends Application {
         System.out.println(testNote.getAllNotifications());
         System.out.println(testNote.getFirst());
         System.out.println(testNote.getLast());
-        System.out.println(testNote.getFirst().equals(LocalDateTime.of(1975,1,1,8,0,0)));*/
+//        System.out.println(testNote.getFirst().equals(LocalDateTime.of(1975,1,1,8,0,0)));*/
+//        LocalDateTime time;
+//        time = LocalDateTime.of(2000,2,5,3,54,7,32);
+//        System.out.println(time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-nn")));
+//        time = time.withNano(11);
+//        System.out.println(time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-nn")));
+//        System.out.println(time.getNano());
     }
     public static void main(String[] args){
         Application.launch(args);
