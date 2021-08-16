@@ -68,16 +68,21 @@ public void addAlarm(LocalDateTime alarm) {
      * т.к. метод каждый раз обращается к notification.first, то при добавлении оповещения, которое должно сработать раньше, метод будет
      * обрабатывать именно его(т.к. notification.first() дает самое близкое к текущему времени оповещение) */
     public void isNotificationNow () {
-        if (notifications.first().equals(LocalDateTime.now())) {
-            notifications.remove(notifications.first());
+        if (notifications.first().equals(LocalDateTime.now().withNano(0))) {
+            //notifications.remove(notifications.first());
+            //вызов события
+            System.out.println("done");
+            startNote();
 
         } else {
+            System.out.println(LocalDateTime.now());
             isNotificationNow();
         }
     }
+
     public void isNotificationEmpty ()
     {
-        if (notifications.isEmpty() == false)
+        if (!notifications.isEmpty())
             isNotificationNow();
         else isNotificationEmpty();
     }
@@ -87,6 +92,17 @@ public void addAlarm(LocalDateTime alarm) {
             isNotificationEmpty();
             return true;
         }
+
+    }
+    public void startNote(){
+        if(notifications.first().getNano() ==1 )
+//            ControllerClass.lblNote.setText("Notification!");
+            System.out.println("Notification!!");
+        if(notifications.first().getNano() ==2 ){
+//            ControllerClass.lblNote.setText("Alarm!");
+            System.out.println("Alarm!!!");
+        }
+
 
     }
 }
