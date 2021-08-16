@@ -44,6 +44,12 @@ public LocalDateTime getFinishTime(){return finishTime;}
     /*Новая реализация:
     * в конструкторе запускается асинхронный поток с постоянной проверкой пустой ли TreeSet. Как только он ен пустой запускается isNotificationNow.
     * Когда рекурсия завершается, должно сработать событие, которое запускает оповещение, удаляет notifications.first(), и запускает поток */
+
+    /* Новейшая реализация!!! От рекурсии отказался по причине система не вывозит столько рекурсий. Вместо рекурсии теперь цикл while. Он дает точность в отслеживании оповещений
+    вплоть до 0.01 наносекунды, но при этом увеличивает нагрузку на процессор при остлеживании одного оповещения на ~10%. А если пользователю надо будет отслеживать 10 оповещений
+    в 10 разных планах??? Тогда компьютор просто взорвется, если я попытаюсь вызвать 10 фоновых потоков по 10% нагрузки процессора каждый. Что же делать?? ПРАВИЛЬНО:
+    создать один общий TreeSet для всех оповещений и будильников! При этом, если оповещения совпадают, одно из них удалять. Есди по времени совпадают оповещение и будильник то их
+    индекс(наносекунды) сделать равным 3. Остается только решить вопрос с привязкой оповещения к конкретному плану!*/
 public void addNotification(LocalDateTime note){
     note = note.withNano(1);
     notifications.add(note);
@@ -68,32 +74,43 @@ public void addAlarm(LocalDateTime alarm) {
      * т.к. метод каждый раз обращается к notification.first, то при добавлении оповещения, которое должно сработать раньше, метод будет
      * обрабатывать именно его(т.к. notification.first() дает самое близкое к текущему времени оповещение) */
     public void isNotificationNow () {
-        if (notifications.first().equals(LocalDateTime.now().withNano(0))) {
-            //notifications.remove(notifications.first());
-            //вызов события
-            System.out.println("done");
-            startNote();
+        boolean itis = notifications.first().equals(LocalDateTime.now().withNano(0));
+//        if (notifications.first().equals(LocalDateTime.now().withNano(0))) {
+//            //notifications.remove(notifications.first());
+//            //вызов события
+//            System.out.println("done");
+//            startNote();
+//
+//        } else {
+//            System.out.println(LocalDateTime.now());
+//            isNotificationNow();
+//        }
+        while (itis != true){
+            itis = notifications.first().withNano(0).equals(LocalDateTime.now().withNano(0));
 
-        } else {
-            System.out.println(LocalDateTime.now());
-            isNotificationNow();
         }
     }
 
     public void isNotificationEmpty ()
-    {
-        if (!notifications.isEmpty())
-            isNotificationNow();
-        else isNotificationEmpty();
+    { boolean emptyNote= notifications.isEmpty();
+//        if (!notifications.isEmpty())
+//            isNotificationNow();
+//        else isNotificationEmpty();
+        while(emptyNote){
+            emptyNote = notifications.isEmpty();
+        }
+        isNotificationNow();
     }
     class MyCallableNote implements Callable<Boolean> {
         @Override
         public Boolean call() throws Exception {
             isNotificationEmpty();
+            startNote();
             return true;
         }
 
     }
+
     public void startNote(){
         if(notifications.first().getNano() ==1 )
 //            ControllerClass.lblNote.setText("Notification!");

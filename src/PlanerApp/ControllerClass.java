@@ -40,7 +40,9 @@ public class ControllerClass {
         int seconds = Integer.parseInt(txtSeconds.getText());
         LocalDateTime dt = LocalDateTime.of(year,month,day,hours,minutes,seconds);
         Plan plan = new Plan();
-        plan.addNotification(dt);
+        Plan plan1 = new Plan();
+        plan.addAlarm(dt);
+        plan1.addNotification(dt);
         System.out.println(dt);
         System.out.println(LocalDateTime.now());
 
