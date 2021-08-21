@@ -42,9 +42,10 @@ public class ControllerClass {
         Plan plan = new Plan();
         Plan plan1 = new Plan();
         plan.addAlarm(dt);
-        plan1.addNotification(dt);
+        plan1.addNotification(dt.withSecond(dt.getSecond()+3));
         System.out.println(dt);
         System.out.println(LocalDateTime.now());
+        System.out.println(plan1.getAllNotifications());
 
     }
 }

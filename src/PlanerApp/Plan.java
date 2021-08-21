@@ -13,18 +13,23 @@ private String content;
 //НЕ ЗАБЫТЬ ПРО shutdown!!!!!!!!!!!!!!!
 //Сделать так чтобы весь TreeSet улетал в пул, а при добавлении новый элемент просто добавляется в пул. Результат выводится по готовности.
 // При этом .get() должен забирать результат у первого завершенного потока.
-private ExecutorService pool = Executors.newSingleThreadExecutor();
-Callable<Boolean> callableNotify = new MyCallableNote();
-Future result;
-TreeSet<LocalDateTime> notifications = new TreeSet<LocalDateTime>();
-boolean notificationsIsEmpty;
+    //Статичный пул и TreeSet, позволют значительно снизить нагрузку на процессо при создании параллельных планов с оповещениями в каждом.
+    //Нагрузка при старой реализации равна 15% на каждый новый план. При новой: 10-12% на всё!!!!!
+    private static ExecutorService pool = Executors.newSingleThreadExecutor();
+    private static Callable<Boolean> callableNotify;
+    private static Future result;
+    private static boolean isPoolLaunched = false;
+private static TreeSet<LocalDateTime> notifications = new TreeSet<LocalDateTime>();
 Plan(){
     startTime = LocalDateTime.of(1970,1,1,0,0,0);
     finishTime = LocalDateTime.of(1970,1,1,0,0,1);
     head = "";
     content ="";
-    notificationsIsEmpty = true;
-    result = pool.submit(callableNotify);
+    if (isPoolLaunched == false){
+        isPoolLaunched = true;
+        callableNotify = new MyCallableNote();
+        result = pool.submit(callableNotify);
+    }
 };
 
 
@@ -53,13 +58,12 @@ public LocalDateTime getFinishTime(){return finishTime;}
 public void addNotification(LocalDateTime note){
     note = note.withNano(1);
     notifications.add(note);
-    notificationsIsEmpty = false;
+
 
 }
 public void addAlarm(LocalDateTime alarm) {
     alarm = alarm.withNano(2);
     notifications.add(alarm);
-    notificationsIsEmpty = false;
 }
 
     public TreeSet<LocalDateTime> getAllNotifications () {
@@ -115,6 +119,7 @@ public void addAlarm(LocalDateTime alarm) {
         if(notifications.first().getNano() ==1 )
 //            ControllerClass.lblNote.setText("Notification!");
             System.out.println("Notification!!");
+
         if(notifications.first().getNano() ==2 ){
 //            ControllerClass.lblNote.setText("Alarm!");
             System.out.println("Alarm!!!");
