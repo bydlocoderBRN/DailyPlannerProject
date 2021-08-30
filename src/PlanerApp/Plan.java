@@ -16,8 +16,8 @@ private String content;
     //Статичный пул и TreeSet, позволют значительно снизить нагрузку на процессо при создании параллельных планов с оповещениями в каждом.
     //Нагрузка при старой реализации равна 15% на каждый новый план. При новой: 10-12% на всё!!!!!
     private static ExecutorService pool = Executors.newSingleThreadExecutor();
-    private static Callable<Boolean> callableNotify;
-    private static Future result;
+//    private static Callable<Boolean> callableNotify;
+//    private static Future result;
     private static boolean isPoolLaunched = false;
 private static TreeSet<LocalDateTime> notifications = new TreeSet<LocalDateTime>();
 Plan(){
@@ -27,8 +27,9 @@ Plan(){
     content ="";
     if (isPoolLaunched == false){
         isPoolLaunched = true;
-        callableNotify = new MyCallableNote();
-        result = pool.submit(callableNotify);
+//        callableNotify = new MyCallableNote();
+//        result = pool.submit(callableNotify);
+        pool.execute(noteDetector);
     }
 };
 
@@ -78,17 +79,7 @@ public void addAlarm(LocalDateTime alarm) {
      * т.к. метод каждый раз обращается к notification.first, то при добавлении оповещения, которое должно сработать раньше, метод будет
      * обрабатывать именно его(т.к. notification.first() дает самое близкое к текущему времени оповещение) */
     public void isNotificationNow () {
-        boolean itis = notifications.first().equals(LocalDateTime.now().withNano(0));
-//        if (notifications.first().equals(LocalDateTime.now().withNano(0))) {
-//            //notifications.remove(notifications.first());
-//            //вызов события
-//            System.out.println("done");
-//            startNote();
-//
-//        } else {
-//            System.out.println(LocalDateTime.now());
-//            isNotificationNow();
-//        }
+        boolean itis = notifications.first().withNano(0).equals(LocalDateTime.now().withNano(0));
         while (itis != true){
             itis = notifications.first().withNano(0).equals(LocalDateTime.now().withNano(0));
 
@@ -97,32 +88,39 @@ public void addAlarm(LocalDateTime alarm) {
 
     public void isNotificationEmpty ()
     { boolean emptyNote= notifications.isEmpty();
-//        if (!notifications.isEmpty())
-//            isNotificationNow();
-//        else isNotificationEmpty();
         while(emptyNote){
             emptyNote = notifications.isEmpty();
         }
         isNotificationNow();
     }
-    class MyCallableNote implements Callable<Boolean> {
+    Runnable noteDetector = new Runnable() {
         @Override
-        public Boolean call() throws Exception {
+        public void run() {
             isNotificationEmpty();
             startNote();
-            return true;
         }
-
-    }
+    };
+//    class MyCallableNote implements Callable<Boolean> {
+//        @Override
+//        public Boolean call() throws Exception {
+//            isNotificationEmpty();
+//            startNote();
+//            return true;
+//        }
+//
+//    }
 
     public void startNote(){
-        if(notifications.first().getNano() ==1 )
-//            ControllerClass.lblNote.setText("Notification!");
+        if(notifications.first().getNano() ==1 ){
             System.out.println("Notification!!");
-
-        if(notifications.first().getNano() ==2 ){
-//            ControllerClass.lblNote.setText("Alarm!");
+            notifications.remove(notifications.first());
+//            pool.submit(callableNotify);
+            pool.execute(noteDetector);}
+        else if(notifications.first().getNano() ==2 ){
             System.out.println("Alarm!!!");
+            notifications.remove(notifications.first());
+//            pool.submit(callableNotify);
+            pool.execute(noteDetector);
         }
 
 
