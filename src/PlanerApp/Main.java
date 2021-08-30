@@ -6,8 +6,12 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import javax.naming.LinkRef;
+import javax.naming.RefAddr;
+import javax.naming.Reference;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.*;
@@ -19,9 +23,10 @@ public class Main extends Application {
         Scene sceneTest = new Scene(root);
         stage.setScene(sceneTest);
         stage.setTitle("DailyPlanner");
-        stage.setWidth(400);
-        stage.setWidth(400);
+        stage.setWidth(960);
+        stage.setHeight(540);
         stage.show();
+
        /* Plan testNote = new Plan();
         testNote.addNotification(LocalDateTime.of(2000,1,1,0,0,0));
         testNote.addNotification(LocalDateTime.of(2001,1,1,0,0,0));
@@ -43,38 +48,36 @@ public class Main extends Application {
     }
     public static void main(String[] args) throws Exception{
         Application.launch(args);
-        Callable<Integer> callable = new MyCallable();
-        Callable<Integer> c2 = new Callable2();
-        ExecutorService pol = Executors.newSingleThreadExecutor();
-        Future res;
-
-        res = pol.submit(callable);
-        res = pol.submit(c2);
-        System.out.println("res succesed");
-        System.out.println(res.get());
-        pol.shutdown();
+//        Callable<Integer> callable = new MyCallable();
+//        Callable<Integer> c2 = new Callable2();
+//        ExecutorService pol = Executors.newSingleThreadExecutor();
+//        Future res;
+//
+//        res = pol.submit(callable);
+//        res = pol.submit(c2);
+//        System.out.println("res succesed");
+//        System.out.println(res.get());
+//        pol.shutdown();
     }
-    static class Callable2 implements Callable<Integer>{
-        @Override
-        public Integer call() throws Exception {
-            return 6;
-        }
-    }
-static class MyCallable implements Callable<Integer>{
-        int i=0;
-    @Override
-    public Integer call() throws Exception {
-        while(i<10){
-            i+=1;
-
-        }
-        Thread.sleep(5000);
-
-        return i;
-    }
-}
-
-
+//    static class Callable2 implements Callable<Integer>{
+//        @Override
+//        public Integer call() throws Exception {
+//            return 6;
+//        }
+//    }
+//static class MyCallable implements Callable<Integer>{
+//        int i=0;
+//    @Override
+//    public Integer call() throws Exception {
+//        while(i<10){
+//            i+=1;
+//
+//        }
+//        Thread.sleep(5000);
+//
+//        return i;
+//    }
+//}
 
 }
 

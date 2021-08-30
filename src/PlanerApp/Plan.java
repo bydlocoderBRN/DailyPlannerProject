@@ -2,6 +2,7 @@ package PlanerApp;
 
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.concurrent.*;
 
@@ -10,17 +11,32 @@ private LocalDateTime startTime;
 private LocalDateTime finishTime;
 private String head;
 private String content;
+private int hashNote;
+private static int globalHashNote=0;
+private static ExecutorService pool = Executors.newSingleThreadExecutor();
+private static boolean isPoolLaunched = false;
+private static TreeSet<LocalDateTime> notifications = new TreeSet<LocalDateTime>();
+public static HashMap<Integer,Plan> plans = new HashMap<Integer, Plan>();
+
+    Runnable noteDetector = new Runnable() {
+        @Override
+        public void run() {
+            isNotificationEmpty();
+            startNote();
+        }
+    };
 //НЕ ЗАБЫТЬ ПРО shutdown!!!!!!!!!!!!!!!
 //Сделать так чтобы весь TreeSet улетал в пул, а при добавлении новый элемент просто добавляется в пул. Результат выводится по готовности.
 // При этом .get() должен забирать результат у первого завершенного потока.
     //Статичный пул и TreeSet, позволют значительно снизить нагрузку на процессо при создании параллельных планов с оповещениями в каждом.
     //Нагрузка при старой реализации равна 15% на каждый новый план. При новой: 10-12% на всё!!!!!
-    private static ExecutorService pool = Executors.newSingleThreadExecutor();
+
 //    private static Callable<Boolean> callableNotify;
 //    private static Future result;
-    private static boolean isPoolLaunched = false;
-private static TreeSet<LocalDateTime> notifications = new TreeSet<LocalDateTime>();
+
+
 Plan(){
+    hashNote = globalHashNote;
     startTime = LocalDateTime.of(1970,1,1,0,0,0);
     finishTime = LocalDateTime.of(1970,1,1,0,0,1);
     head = "";
@@ -32,12 +48,35 @@ Plan(){
         pool.execute(noteDetector);
     }
 };
-
-
+    Plan(String hed){
+        hashNote = globalHashNote;
+        startTime = LocalDateTime.of(1970,1,1,0,0,0);
+        finishTime = LocalDateTime.of(1970,1,1,0,0,1);
+        head = hed;
+        content ="";
+        if (isPoolLaunched == false){
+            isPoolLaunched = true;
+//        callableNotify = new MyCallableNote();
+//        result = pool.submit(callableNotify);
+            pool.execute(noteDetector);
+        }
+        System.out.println("New");
+    };
+    public int newPlan(String hed){
+        int hash = getHash();
+        plans.put(hash,new Plan(hed));
+        return hash;
+    }
+public String getHead(){return head;}
 public void setStartTime(LocalDateTime sTime){startTime = sTime;}
 public LocalDateTime getStartTime(){return startTime;}
 public void setFinishTime(LocalDateTime fTime){finishTime = fTime;}
 public LocalDateTime getFinishTime(){return finishTime;}
+private int getHash(){
+        globalHashNote+=1;
+        return globalHashNote;
+    };
+
 
 /* Реализация уведомлений и будильников:
 * при добавлении нового уведомления или будильника(далее объект) наносекунды в добавляемом объекте меняются на 1(уведомление) или 2(будильник)
@@ -56,15 +95,26 @@ public LocalDateTime getFinishTime(){return finishTime;}
     в 10 разных планах??? Тогда компьютор просто взорвется, если я попытаюсь вызвать 10 фоновых потоков по 10% нагрузки процессора каждый. Что же делать?? ПРАВИЛЬНО:
     создать один общий TreeSet для всех оповещений и будильников! При этом, если оповещения совпадают, одно из них удалять. Есди по времени совпадают оповещение и будильник то их
     индекс(наносекунды) сделать равным 3. Остается только решить вопрос с привязкой оповещения к конкретному плану!*/
+// ==================================================================================================================================================================================
+/*Реализация множества планов + некоторые изменения от 30 августа.
+ --Отказался от callable в пользу runnable. От первого слищком много мороки и мне уже не нужно ничего возвращать из потока.
+ --Ввел глобальный список планов (HashMap), который состоит из ключа и плана. Добавление нового плана осуществляется только через newPlan(). Этот метод создает новый объект без ссылки,
+ берет ключ в генераторе и закидывает в HashMap ключ и план. Обязательно надо сохранять ключ, который возвращает метод newPlan, потому что через него осуществляется доступ
+  к созданному плану (через hasmap.get(key)). Куда сохранять и как правильно ипользовать ключ я расписал в main
+ --Привязал уведомления к конкретному плану через ключ!!!!*/
 public void addNotification(LocalDateTime note){
-    note = note.withNano(1);
+    note = note.withNano(Integer.parseInt(Integer.toString(hashNote)+"1"));
     notifications.add(note);
+    System.out.println("note key: " + Integer.toString(note.getNano()%10));
+    System.out.println("Key: " + Integer.toString(note.getNano()/10));
 
 
 }
 public void addAlarm(LocalDateTime alarm) {
-    alarm = alarm.withNano(2);
+    alarm = alarm.withNano(Integer.parseInt(Integer.toString(hashNote)+"2"));
     notifications.add(alarm);
+    System.out.println("Alarm key: " + Integer.toString(alarm.getNano()%10));
+    System.out.println("Key: " + Integer.toString(alarm.getNano()/10));
 }
 
     public TreeSet<LocalDateTime> getAllNotifications () {
@@ -93,13 +143,7 @@ public void addAlarm(LocalDateTime alarm) {
         }
         isNotificationNow();
     }
-    Runnable noteDetector = new Runnable() {
-        @Override
-        public void run() {
-            isNotificationEmpty();
-            startNote();
-        }
-    };
+
 //    class MyCallableNote implements Callable<Boolean> {
 //        @Override
 //        public Boolean call() throws Exception {
@@ -109,15 +153,22 @@ public void addAlarm(LocalDateTime alarm) {
 //        }
 //
 //    }
-
+//@Override
+//public int hashCode(){
+//    return this.hashCode()/2;
+//}
+    private String wichNotificationNow(){
+        int hash = notifications.first().getNano()/10;
+        return plans.get(hash).getHead();
+    }
     public void startNote(){
-        if(notifications.first().getNano() ==1 ){
-            System.out.println("Notification!!");
+        if(notifications.first().getNano()%10 ==1 ){
+            System.out.println("Notification!!" + wichNotificationNow());
             notifications.remove(notifications.first());
 //            pool.submit(callableNotify);
             pool.execute(noteDetector);}
-        else if(notifications.first().getNano() ==2 ){
-            System.out.println("Alarm!!!");
+        else if(notifications.first().getNano()%10 ==2 ){
+            System.out.println("Alarm!!!" + wichNotificationNow());
             notifications.remove(notifications.first());
 //            pool.submit(callableNotify);
             pool.execute(noteDetector);
