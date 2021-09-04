@@ -1,10 +1,13 @@
 package PlanerApp;
 
 
+import java.awt.*;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.concurrent.*;
+import java.awt.TrayIcon.MessageType;
+
 
 public class Plan {
 private LocalDateTime startTime;
@@ -17,6 +20,9 @@ private static ExecutorService pool = Executors.newSingleThreadExecutor();
 private static boolean isPoolLaunched = false;
 private static TreeSet<LocalDateTime> notifications = new TreeSet<LocalDateTime>();
 public static HashMap<Integer,Plan> plans = new HashMap<Integer, Plan>();
+public static    SystemTray tray;
+public static    Image planerIcon;
+public static    TrayIcon trayIcon;
 
     Runnable noteDetector = new Runnable() {
         @Override
@@ -47,6 +53,8 @@ Plan(){
 //        result = pool.submit(callableNotify);
         pool.execute(noteDetector);
     }
+
+
 };
     Plan(String hed){
         hashNote = globalHashNote;
@@ -60,19 +68,24 @@ Plan(){
 //        result = pool.submit(callableNotify);
             pool.execute(noteDetector);
         }
-        System.out.println("New");
+
+
+
     };
-    public int newPlan(String hed){
+    public static int newPlan(String hed){
         int hash = getHash();
         plans.put(hash,new Plan(hed));
         return hash;
+    }
+    public static Plan toPlan(int key){
+        return plans.get(key);
     }
 public String getHead(){return head;}
 public void setStartTime(LocalDateTime sTime){startTime = sTime;}
 public LocalDateTime getStartTime(){return startTime;}
 public void setFinishTime(LocalDateTime fTime){finishTime = fTime;}
 public LocalDateTime getFinishTime(){return finishTime;}
-private int getHash(){
+private static int getHash(){
         globalHashNote+=1;
         return globalHashNote;
     };
@@ -105,19 +118,15 @@ private int getHash(){
 public void addNotification(LocalDateTime note){
     note = note.withNano(Integer.parseInt(Integer.toString(hashNote)+"1"));
     notifications.add(note);
-    System.out.println("note key: " + Integer.toString(note.getNano()%10));
-    System.out.println("Key: " + Integer.toString(note.getNano()/10));
 
 
 }
 public void addAlarm(LocalDateTime alarm) {
     alarm = alarm.withNano(Integer.parseInt(Integer.toString(hashNote)+"2"));
     notifications.add(alarm);
-    System.out.println("Alarm key: " + Integer.toString(alarm.getNano()%10));
-    System.out.println("Key: " + Integer.toString(alarm.getNano()/10));
 }
 
-    public TreeSet<LocalDateTime> getAllNotifications () {
+    public static TreeSet<LocalDateTime> getAllNotifications () {
         return notifications;
     }
       /*  public LocalDateTime getFirst(){return notifications.first();}
@@ -164,6 +173,7 @@ public void addAlarm(LocalDateTime alarm) {
     public void startNote(){
         if(notifications.first().getNano()%10 ==1 ){
             System.out.println("Notification!!" + wichNotificationNow());
+               trayIcon.displayMessage("Notify!",wichNotificationNow(), MessageType.INFO);
             notifications.remove(notifications.first());
 //            pool.submit(callableNotify);
             pool.execute(noteDetector);}
@@ -175,7 +185,34 @@ public void addAlarm(LocalDateTime alarm) {
         }
 
 
+            }
+public static void trayNote(){
+        if (SystemTray.isSupported()){
+    try {
+
+        tray = SystemTray.getSystemTray();
+        planerIcon = Toolkit.getDefaultToolkit().getImage("trayIcon.gif");
+        trayIcon = new TrayIcon(planerIcon, "your Daily Planer");
+        trayIcon.setImageAutoSize(true);
+        trayIcon.setToolTip("A daily planer notification");
+        tray.add(trayIcon);
+
     }
+    catch (Exception err){System.err.println(err);}}
+}
+//Уведомление в системном трее
+//    static void notifyTray() {
+//        try {
+//            SystemTray tray = SystemTray.getSystemTray();
+//            Image planerIcon = Toolkit.getDefaultToolkit().getImage("PlanerIcon.png");
+//            TrayIcon trayIcon = new TrayIcon(planerIcon, "your Daily Planer");
+//            trayIcon.setImageAutoSize(true);
+//            tray.add(trayIcon);
+//
+//        }
+//        catch (Exception err){System.err.println(err);}
+//    }
+
 }
 
 

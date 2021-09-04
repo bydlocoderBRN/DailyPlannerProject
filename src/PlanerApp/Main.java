@@ -26,7 +26,7 @@ public class Main extends Application {
         stage.setWidth(960);
         stage.setHeight(540);
         stage.show();
-
+        Plan.trayNote();
        /* Plan testNote = new Plan();
         testNote.addNotification(LocalDateTime.of(2000,1,1,0,0,0));
         testNote.addNotification(LocalDateTime.of(2001,1,1,0,0,0));

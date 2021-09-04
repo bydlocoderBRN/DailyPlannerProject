@@ -41,19 +41,19 @@ public class ControllerClass {
         int minutes = Integer.parseInt(txtMinutes.getText());
         int seconds = Integer.parseInt(txtSeconds.getText());
         LocalDateTime dt = LocalDateTime.of(year,month,day,hours,minutes,seconds);
-        Plan mainPlan = new Plan();
-        int key1 = mainPlan.newPlan("Doctor");
-        int key2 = mainPlan.newPlan("Granny");
-        int key3 = mainPlan.newPlan("B.Day");
 
-        mainPlan.plans.get(key1).addAlarm(dt);
-        mainPlan.plans.get(key2).addNotification(dt.withSecond(dt.getSecond()+3));
-        mainPlan.plans.get(key3).addNotification(dt.withSecond(dt.getSecond()+6));
-        mainPlan.plans.get(key2).addAlarm(dt.withSecond(dt.getSecond()+9));
+
+        int key1 = Plan.newPlan("Doctor");
+        int key2 = Plan.newPlan("Granny");
+        int key3 = Plan.newPlan("B.Day");
+        Plan.toPlan(key1).addAlarm(dt);
+        Plan.toPlan(key2).addNotification(dt.withSecond(dt.getSecond()+3));
+        Plan.toPlan(key3).addNotification(dt.withSecond(dt.getSecond()+6));
+        Plan.toPlan(key2).addAlarm(dt.withSecond(dt.getSecond()+9));
 
         System.out.println(dt);
         System.out.println(LocalDateTime.now());
-        System.out.println(mainPlan.getAllNotifications());
+        System.out.println(Plan.getAllNotifications());
 
     }
 }
