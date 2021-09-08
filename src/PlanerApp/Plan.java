@@ -1,9 +1,14 @@
 package PlanerApp;
 
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+
 import java.awt.*;
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.*;
 import java.awt.TrayIcon.MessageType;
@@ -23,8 +28,11 @@ public static HashMap<Integer,Plan> plans = new HashMap<Integer, Plan>();
 public static    SystemTray tray;
 public static    Image planerIcon;
 public static    TrayIcon trayIcon;
+private static File alarmSound = new File("D://Coding//Java//DailyPlanner//src//PlanerApp//Alarm.wav");
+private static Sound alarm = new Sound(alarmSound);
 
-    Runnable noteDetector = new Runnable() {
+
+   public static Runnable noteDetector = new Runnable() {
         @Override
         public void run() {
             isNotificationEmpty();
@@ -48,10 +56,11 @@ Plan(){
     head = "";
     content ="";
     if (isPoolLaunched == false){
+        pool.execute(noteDetector);
         isPoolLaunched = true;
 //        callableNotify = new MyCallableNote();
 //        result = pool.submit(callableNotify);
-        pool.execute(noteDetector);
+
     }
 
 
@@ -63,10 +72,11 @@ Plan(){
         head = hed;
         content ="";
         if (isPoolLaunched == false){
+            pool.execute(noteDetector);
             isPoolLaunched = true;
 //        callableNotify = new MyCallableNote();
 //        result = pool.submit(callableNotify);
-            pool.execute(noteDetector);
+
         }
 
 
@@ -85,6 +95,7 @@ public void setStartTime(LocalDateTime sTime){startTime = sTime;}
 public LocalDateTime getStartTime(){return startTime;}
 public void setFinishTime(LocalDateTime fTime){finishTime = fTime;}
 public LocalDateTime getFinishTime(){return finishTime;}
+public static TreeSet<LocalDateTime> getAllNotifications () { return notifications; }
 private static int getHash(){
         globalHashNote+=1;
         return globalHashNote;
@@ -126,9 +137,7 @@ public void addAlarm(LocalDateTime alarm) {
     notifications.add(alarm);
 }
 
-    public static TreeSet<LocalDateTime> getAllNotifications () {
-        return notifications;
-    }
+
       /*  public LocalDateTime getFirst(){return notifications.first();}
             public LocalDateTime getLast(){return notifications.last();}*/
 
@@ -137,7 +146,7 @@ public void addAlarm(LocalDateTime alarm) {
      * стирается и result.get() возвращает true
      * т.к. метод каждый раз обращается к notification.first, то при добавлении оповещения, которое должно сработать раньше, метод будет
      * обрабатывать именно его(т.к. notification.first() дает самое близкое к текущему времени оповещение) */
-    public void isNotificationNow () {
+    private static void isNotificationNow () {
         boolean itis = notifications.first().withNano(0).equals(LocalDateTime.now().withNano(0));
         while (itis != true){
             itis = notifications.first().withNano(0).equals(LocalDateTime.now().withNano(0));
@@ -145,11 +154,12 @@ public void addAlarm(LocalDateTime alarm) {
         }
     }
 
-    public void isNotificationEmpty ()
+    private static void isNotificationEmpty ()
     { boolean emptyNote= notifications.isEmpty();
         while(emptyNote){
             emptyNote = notifications.isEmpty();
         }
+        System.out.println("Is empty works");
         isNotificationNow();
     }
 
@@ -166,22 +176,26 @@ public void addAlarm(LocalDateTime alarm) {
 //public int hashCode(){
 //    return this.hashCode()/2;
 //}
-    private String wichNotificationNow(){
+    private static String wichNotificationNow(){
         int hash = notifications.first().getNano()/10;
         return plans.get(hash).getHead();
     }
-    public void startNote(){
+    public static void startNote(){
         if(notifications.first().getNano()%10 ==1 ){
             System.out.println("Notification!!" + wichNotificationNow());
                trayIcon.displayMessage("Notify!",wichNotificationNow(), MessageType.INFO);
             notifications.remove(notifications.first());
-//            pool.submit(callableNotify);
-            pool.execute(noteDetector);}
+           pool.execute(noteDetector);
+            ;}
         else if(notifications.first().getNano()%10 ==2 ){
             System.out.println("Alarm!!!" + wichNotificationNow());
+            alarm.play();
+
+            System.out.println("Alarm stared");
             notifications.remove(notifications.first());
-//            pool.submit(callableNotify);
-            pool.execute(noteDetector);
+            Main.showDialog(wichNotificationNow());
+          pool.execute(noteDetector);
+            ;
         }
 
 

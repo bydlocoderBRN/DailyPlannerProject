@@ -4,19 +4,37 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 
 import javax.naming.LinkRef;
 import javax.naming.RefAddr;
 import javax.naming.Reference;
+import java.beans.PropertyChangeSupport;
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.*;
 
 public class Main extends Application {
+    public static Alert alertAlarm = new Alert(Alert.AlertType.CONFIRMATION);
+
+    public static void showDialog(String s){
+        alertAlarm.setHeaderText(s);
+        alertAlarm.setContentText("Alarm now");
+        alertAlarm.setTitle("Alarm!");
+        Optional<ButtonType> result = alertAlarm.showAndWait();
+        if (result.get() == ButtonType.OK){
+        }else{
+            alertAlarm.close();
+
+        }
+    }
     @Override
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("TestDailyScene.fxml"));
@@ -27,6 +45,8 @@ public class Main extends Application {
         stage.setHeight(540);
         stage.show();
         Plan.trayNote();
+
+
        /* Plan testNote = new Plan();
         testNote.addNotification(LocalDateTime.of(2000,1,1,0,0,0));
         testNote.addNotification(LocalDateTime.of(2001,1,1,0,0,0));
@@ -47,6 +67,7 @@ public class Main extends Application {
 //        System.out.println(time.getNano());
     }
     public static void main(String[] args) throws Exception{
+
         Application.launch(args);
 //        Callable<Integer> callable = new MyCallable();
 //        Callable<Integer> c2 = new Callable2();
