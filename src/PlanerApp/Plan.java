@@ -5,6 +5,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 
 import java.awt.*;
+import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -28,8 +29,9 @@ public static HashMap<Integer,Plan> plans = new HashMap<Integer, Plan>();
 public static    SystemTray tray;
 public static    Image planerIcon;
 public static    TrayIcon trayIcon;
-private static File alarmSound = new File("D://Coding//Java//DailyPlanner//src//PlanerApp//Alarm.wav");
-private static Sound alarm = new Sound(alarmSound);
+
+protected PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+
 
 
    public static Runnable noteDetector = new Runnable() {
@@ -159,7 +161,7 @@ public void addAlarm(LocalDateTime alarm) {
         while(emptyNote){
             emptyNote = notifications.isEmpty();
         }
-        System.out.println("Is empty works");
+
         isNotificationNow();
     }
 
@@ -189,11 +191,10 @@ public void addAlarm(LocalDateTime alarm) {
             ;}
         else if(notifications.first().getNano()%10 ==2 ){
             System.out.println("Alarm!!!" + wichNotificationNow());
-            alarm.play();
-
-            System.out.println("Alarm stared");
+            Main.isAlertNow=true;
+            Main.alertHeader=wichNotificationNow();
             notifications.remove(notifications.first());
-            Main.showDialog(wichNotificationNow());
+
           pool.execute(noteDetector);
             ;
         }

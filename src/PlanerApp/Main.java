@@ -1,6 +1,8 @@
 package PlanerApp;
 
+import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -8,29 +10,62 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 
-import javax.naming.LinkRef;
-import javax.naming.RefAddr;
-import javax.naming.Reference;
-import java.beans.PropertyChangeSupport;
+
 import java.io.File;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+
 import java.util.Optional;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.*;
+
 
 public class Main extends Application {
-    public static Alert alertAlarm = new Alert(Alert.AlertType.CONFIRMATION);
+/*Реализация всплывающего окна-будильника. Из фонового асинхронного потока для остлеживания оповещений меняется статичная перменная-флаг
+* isAlertNow. Animationtimer все время отслеживает значение этой переменной, и как только оно становится true, вызывается метод,
+* который запускает звук и показывает диалоговое окно. Поскольку в animationtimer нельзя вызвать showAndWait
+* (его можно вызывать только в обработчике событий), то animationtimer запускает метод showandwait через runLater
+* (runlater запускает fx поток через некоторое неопределеное время), что позволяет сначала отключить таймер,
+*  а потом вызвать диалоговое окно */
+//    private static Alert alertAlarm = new Alert(Alert.AlertType.CONFIRMATION);
+    private static File alarmSound = new File("D://Coding//Java//DailyPlanner//src//PlanerApp//Alarm.wav");
+    private static Sound alarm = new Sound(alarmSound);
+    public static boolean isAlertNow=false;
+    public static String alertHeader;
+    static AnimationTimer timerAlarm = new AnimationTimer() {
+        @Override
+        public void handle(long l) {
 
-    public static void showDialog(String s){
+            if(isAlertNow){
+
+                Platform.runLater(() -> {
+                        showAlarmDialog(alertHeader, new Alert(Alert.AlertType.CONFIRMATION));
+                    });
+                timerAlarm.stop();
+            }
+        }
+    };
+    static Runnable runAlertDialog = new Runnable() {
+                @Override
+                public void run() {
+                    showAlarmDialog(alertHeader, new Alert(Alert.AlertType.CONFIRMATION));
+        }
+    };
+    public static void showAlarmDialog(String s, Alert alertAlarm){
+
         alertAlarm.setHeaderText(s);
         alertAlarm.setContentText("Alarm now");
         alertAlarm.setTitle("Alarm!");
+        alarm.stop();
+        alarm.play();
+        isAlertNow=false;
+        timerAlarm.start();
         Optional<ButtonType> result = alertAlarm.showAndWait();
+
+
         if (result.get() == ButtonType.OK){
+            alarm.stop();
+
+            alertAlarm.showAndWait();
         }else{
+            alarm.stop();
+
             alertAlarm.close();
 
         }
@@ -45,60 +80,15 @@ public class Main extends Application {
         stage.setHeight(540);
         stage.show();
         Plan.trayNote();
+        timerAlarm.start();
 
 
-       /* Plan testNote = new Plan();
-        testNote.addNotification(LocalDateTime.of(2000,1,1,0,0,0));
-        testNote.addNotification(LocalDateTime.of(2001,1,1,0,0,0));
-        testNote.addNotification(LocalDateTime.of(1999,1,1,0,0,0));
-        testNote.addNotification(LocalDateTime.of(1975,1,1,0,0,0));
-        testNote.addNotification(LocalDateTime.of(2020,1,1,0,0,0));
-        testNote.addNotification(LocalDateTime.of(2020,1,1,0,0,20));
-        testNote.addNotification(LocalDateTime.of(2020,1,1,0,0,19));
-        System.out.println(testNote.getAllNotifications());
-        System.out.println(testNote.getFirst());
-        System.out.println(testNote.getLast());
-//        System.out.println(testNote.getFirst().equals(LocalDateTime.of(1975,1,1,8,0,0)));*/
-//        LocalDateTime time;
-//        time = LocalDateTime.of(2000,2,5,3,54,7,32);
-//        System.out.println(time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-nn")));
-//        time = time.withNano(11);
-//        System.out.println(time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-nn")));
-//        System.out.println(time.getNano());
     }
     public static void main(String[] args) throws Exception{
 
         Application.launch(args);
-//        Callable<Integer> callable = new MyCallable();
-//        Callable<Integer> c2 = new Callable2();
-//        ExecutorService pol = Executors.newSingleThreadExecutor();
-//        Future res;
-//
-//        res = pol.submit(callable);
-//        res = pol.submit(c2);
-//        System.out.println("res succesed");
-//        System.out.println(res.get());
-//        pol.shutdown();
-    }
-//    static class Callable2 implements Callable<Integer>{
-//        @Override
-//        public Integer call() throws Exception {
-//            return 6;
-//        }
-//    }
-//static class MyCallable implements Callable<Integer>{
-//        int i=0;
-//    @Override
-//    public Integer call() throws Exception {
-//        while(i<10){
-//            i+=1;
-//
-//        }
-//        Thread.sleep(5000);
-//
-//        return i;
-//    }
-//}
 
+
+}
 }
 
