@@ -42,13 +42,12 @@ protected PropertyChangeSupport propertyChangeSupport = new PropertyChangeSuppor
         }
     };
 //НЕ ЗАБЫТЬ ПРО shutdown!!!!!!!!!!!!!!!
-//Сделать так чтобы весь TreeSet улетал в пул, а при добавлении новый элемент просто добавляется в пул. Результат выводится по готовности.
+//Сделать так чтобы весь TreeSet улетал в пул, а при добавлении новый элемент просто добавляется в пул. Результат выводится по готовности. P.S. отказался от такой реализации в пользу отслеживания первого элементра в TreeSet
 // При этом .get() должен забирать результат у первого завершенного потока.
     //Статичный пул и TreeSet, позволют значительно снизить нагрузку на процессо при создании параллельных планов с оповещениями в каждом.
     //Нагрузка при старой реализации равна 15% на каждый новый план. При новой: 10-12% на всё!!!!!
 
-//    private static Callable<Boolean> callableNotify;
-//    private static Future result;
+
 
 
 Plan(){
@@ -60,8 +59,7 @@ Plan(){
     if (isPoolLaunched == false){
         pool.execute(noteDetector);
         isPoolLaunched = true;
-//        callableNotify = new MyCallableNote();
-//        result = pool.submit(callableNotify);
+
 
     }
 
@@ -76,17 +74,27 @@ Plan(){
         if (isPoolLaunched == false){
             pool.execute(noteDetector);
             isPoolLaunched = true;
-//        callableNotify = new MyCallableNote();
-//        result = pool.submit(callableNotify);
-
         }
-
-
-
     };
+    Plan(String hed, String body, LocalDateTime start, LocalDateTime finish){
+        hashNote = globalHashNote;
+        startTime = start;
+        finishTime = finish;
+        head = hed;
+        content =body;
+        if (isPoolLaunched == false){
+            pool.execute(noteDetector);
+            isPoolLaunched = true;
+        }
+    }
     public static int newPlan(String hed){
         int hash = getHash();
         plans.put(hash,new Plan(hed));
+        return hash;
+    }
+    public static int newPlan(String hed, String body, LocalDateTime start, LocalDateTime finish){
+        int hash = getHash();
+        plans.put(hash,new Plan(hed, body, start, finish));
         return hash;
     }
     public static Plan toPlan(int key){
@@ -113,7 +121,7 @@ private static int getHash(){
 // 2 - alarm
 
     /*Новая реализация:
-    * в конструкторе запускается асинхронный поток с постоянной проверкой пустой ли TreeSet. Как только он ен пустой запускается isNotificationNow.
+    * в конструкторе запускается асинхронный поток с постоянной проверкой пустой ли TreeSet. Как только он не пустой запускается isNotificationNow.
     * Когда рекурсия завершается, должно сработать событие, которое запускает оповещение, удаляет notifications.first(), и запускает поток */
 
     /* Новейшая реализация!!! От рекурсии отказался по причине система не вывозит столько рекурсий. Вместо рекурсии теперь цикл while. Он дает точность в отслеживании оповещений
@@ -140,12 +148,11 @@ public void addAlarm(LocalDateTime alarm) {
 }
 
 
-      /*  public LocalDateTime getFirst(){return notifications.first();}
-            public LocalDateTime getLast(){return notifications.last();}*/
 
-    /* Рекурсивный метод isNotificationNow не прекращается пока время близжайшего уведомления/будильника(first()) не совпадет с временем системы.
+
+    /* Метод isNotificationNow не прекращается пока время близжайшего уведомления/будильника(first()) не совпадет с временем системы.
      * Этот метод помещен в отдельный поток для асинхронного выполнения в фоне. Как только метод выходит из петли, первая запись в TreeSet
-     * стирается и result.get() возвращает true
+     * стирается
      * т.к. метод каждый раз обращается к notification.first, то при добавлении оповещения, которое должно сработать раньше, метод будет
      * обрабатывать именно его(т.к. notification.first() дает самое близкое к текущему времени оповещение) */
     private static void isNotificationNow () {
@@ -165,19 +172,7 @@ public void addAlarm(LocalDateTime alarm) {
         isNotificationNow();
     }
 
-//    class MyCallableNote implements Callable<Boolean> {
-//        @Override
-//        public Boolean call() throws Exception {
-//            isNotificationEmpty();
-//            startNote();
-//            return true;
-//        }
-//
-//    }
-//@Override
-//public int hashCode(){
-//    return this.hashCode()/2;
-//}
+
     private static String wichNotificationNow(){
         int hash = notifications.first().getNano()/10;
         return plans.get(hash).getHead();
@@ -215,18 +210,36 @@ public static void trayNote(){
     }
     catch (Exception err){System.err.println(err);}}
 }
-//Уведомление в системном трее
-//    static void notifyTray() {
-//        try {
-//            SystemTray tray = SystemTray.getSystemTray();
-//            Image planerIcon = Toolkit.getDefaultToolkit().getImage("PlanerIcon.png");
-//            TrayIcon trayIcon = new TrayIcon(planerIcon, "your Daily Planer");
-//            trayIcon.setImageAutoSize(true);
-//            tray.add(trayIcon);
-//
-//        }
-//        catch (Exception err){System.err.println(err);}
-//    }
+public void separatePlan(LocalDateTime time){
+        LocalDateTime newTime = plusTime(startTime,time);
+        while (compareTime(finishTime,newTime)){
+            notifications.add(newTime.withNano(Integer.parseInt(Integer.toString(hashNote)+"1")));
+            newTime = plusTime(newTime,time);
+        }
+
+
+    }
+private LocalDateTime getSegmentSeparated(){return null;}
+private boolean compareTime(LocalDateTime biggerTime, LocalDateTime smallerTime){
+        if(biggerTime.getYear()>smallerTime.getYear())
+            return true;
+        else if(biggerTime.getYear()==smallerTime.getYear() && biggerTime.getMonthValue()>smallerTime.getMonthValue())
+            return true;
+        else if(biggerTime.getYear()==smallerTime.getYear() && biggerTime.getMonthValue()==smallerTime.getMonthValue() && biggerTime.getDayOfMonth()>smallerTime.getDayOfMonth())
+            return true;
+        else if(biggerTime.getYear()==smallerTime.getYear() && biggerTime.getMonthValue()==smallerTime.getMonthValue() && biggerTime.getDayOfMonth()==smallerTime.getDayOfMonth() && biggerTime.getHour()>smallerTime.getHour())
+            return true;
+        else if(biggerTime.getYear()==smallerTime.getYear() && biggerTime.getMonthValue()==smallerTime.getMonthValue() && biggerTime.getDayOfMonth()==smallerTime.getDayOfMonth() && biggerTime.getHour()==smallerTime.getHour() && biggerTime.getMinute()>smallerTime.getMinute())
+            return true;
+        else if(biggerTime.getYear()==smallerTime.getYear() && biggerTime.getMonthValue()==smallerTime.getMonthValue() && biggerTime.getDayOfMonth()==smallerTime.getDayOfMonth() && biggerTime.getHour()==smallerTime.getHour() && biggerTime.getMinute()==smallerTime.getMinute() && biggerTime.getSecond()>smallerTime.getSecond())
+            return true;
+        else return false;
+}
+private LocalDateTime plusTime(LocalDateTime time1, LocalDateTime time2){
+        return LocalDateTime.of(time1.getYear()+time2.getYear(),time1.getMonthValue()+time2.getMonthValue(),
+                time1.getDayOfMonth() + time2.getDayOfMonth(),time1.getHour()+time2.getHour(),time1.getMinute()+time2.getMinute(),time1.getSecond()+time2.getSecond());
+}
+
 
 }
 

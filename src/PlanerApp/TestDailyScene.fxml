@@ -19,5 +19,6 @@
       <TextField fx:id="txtHours" layoutX="243.0" layoutY="232.0" prefHeight="26.0" prefWidth="46.0" />
       <TextField fx:id="txtMinutes" layoutX="310.0" layoutY="233.0" prefHeight="26.0" prefWidth="46.0" />
       <TextField fx:id="txtSeconds" layoutX="402.0" layoutY="232.0" prefHeight="26.0" prefWidth="52.0" />
+      <DatePicker layoutX="557.0" layoutY="151.0" />
    </children>
 </AnchorPane>

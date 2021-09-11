@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 
 import java.io.File;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 
@@ -41,12 +42,7 @@ public class Main extends Application {
             }
         }
     };
-    static Runnable runAlertDialog = new Runnable() {
-                @Override
-                public void run() {
-                    showAlarmDialog(alertHeader, new Alert(Alert.AlertType.CONFIRMATION));
-        }
-    };
+
     public static void showAlarmDialog(String s, Alert alertAlarm){
 
         alertAlarm.setHeaderText(s);
@@ -81,8 +77,6 @@ public class Main extends Application {
         stage.show();
         Plan.trayNote();
         timerAlarm.start();
-
-
     }
     public static void main(String[] args) throws Exception{
 
