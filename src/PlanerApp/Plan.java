@@ -76,7 +76,7 @@ Plan(){
             isPoolLaunched = true;
         }
     };
-    Plan(String hed, String body, LocalDateTime start, LocalDateTime finish){
+    Plan( String hed, String body, LocalDateTime start, LocalDateTime finish){
         hashNote = globalHashNote;
         startTime = start;
         finishTime = finish;
@@ -216,9 +216,103 @@ public void separatePlan(LocalDateTime time){
             notifications.add(newTime.withNano(Integer.parseInt(Integer.toString(hashNote)+"1")));
             newTime = plusTime(newTime,time);
         }
-
-
     }
+    //-------------------------------------------
+    // ПОФИКСИТЬ!!!
+    //--Не добавляется первое оповещение которое входит в промежуток
+    //--Добавляется лишнее оповещение в конце, которое выходит из промежутка
+    //ФИКС (возможный): сделать добавление оповещения в наале цикла while, а не в конце
+    //Хорошенько протестить метод!!! Особенно для дней!!!!!!!!!!!
+    //-----------------------------------------------
+    /*Первая часть автоматического раскидывания уведомлений по плану. Пользователь выбирает через какие промежутки времени будут всплывать уведомления в течении плана
+    * и метод автоматически разбивает план на эти промежутки.*/
+    public  void separatePlan(int year, int month, int day, int hour, int minute, int second){
+        final int SECOND = second;
+        final int MINUTE = minute;
+        final int HOUR = hour;
+        final int DAY = day;
+        final int MONTH = month;
+        final int YEAR = year;
+        int MAX_DAYS;
+        int updatingMonth=0;
+        LocalDateTime newTime = startTime;
+        while(compareTime(finishTime,newTime)){
+            second = SECOND;
+            minute = MINUTE;
+            hour = HOUR;
+            day = DAY;
+            month = MONTH;
+            year = YEAR;
+            second = newTime.getSecond()+second;
+            /*0т этого момента до начала дней просто обрабатывается введенное пользователем значение. Излищки секунд/минут/часов перекидываются на следущую категорию(излишки секунд в минуты, излишки минут в часы и т.д)
+            и в оповещение которое будет добавлено добавляется кореектное значение без излишков. Пример - если пользователь хочет чтобы уведомления выводились каждые 63 минуты, при этом время начала плана ХХХХ:ХХ:ХХ:03:05:00,
+            то время первого оповещения будет ХХХХ:ХХ:ХХ:04:08:00 (излишки минут перекинулись в часы, а остаток сложился с исходным временем и зафиксировался в оповещении)*/
+            while(second>59){
+                second = second - 60;
+                minute +=1;
+            }
+            newTime = newTime.withSecond(second);
+            minute = newTime.getMinute() + minute;
+            while (minute>59){
+                minute = minute - 60;
+                hour+=1;
+            }
+            newTime = newTime.withMinute(minute);
+            hour = newTime.getHour() + hour;
+            while (hour>23){
+                hour = hour - 24;
+                day+=1;
+            }
+            //1,3,5,7,8,10,12 - 31 день
+            newTime = newTime.withHour(hour);
+            day = newTime.getDayOfMonth() + day;
+            /*т.к. дни в зависимости от месяца неравномерны, то реализация обработки дней будет иная. Сначала вычисляется какое максимальное число дней в месяце от которого сейчас идет счет. Если число дней введенных пользователем
+            в сумме с днями даты от которой идет отсчет больше чем это максимальное число, то происходит обработка, и излишки дней перекидываются в месяцы. Поскольку за месяцами надо следить динамически, то излишки сразу прибавляются
+            к месяцам в дате от которой идет отсчет. Излишки мсяцев тут же перекидываются в годы. Затем вычисляется новое максимальное число дней в месяце и итерация завершается.
+
+            */
+
+            MAX_DAYS = calculateMaxDays(newTime);
+            while (day>MAX_DAYS){
+                day = day - MAX_DAYS;
+                updatingMonth = newTime.getMonthValue()+1;
+                if(updatingMonth>12){
+                    year+=1;
+                    updatingMonth = updatingMonth - 12;
+                }
+                newTime = newTime.withMonth(updatingMonth);
+                MAX_DAYS = calculateMaxDays(newTime);
+            }
+            newTime = newTime.withDayOfMonth(day);
+            month = newTime.getMonthValue() + month;
+            while (month > 12){
+                month = month-12;
+                year+=1;
+            }
+            newTime = newTime.withMonth(month);
+            year = newTime.getYear()+year;
+            newTime = newTime.withYear(year);
+            notifications.add(newTime);
+        }
+    }
+    //метод определяет максимальное число дней в конкретном месяце. Нужен для правильной работы separatePlan(...)
+    private int calculateMaxDays(LocalDateTime newTime) {
+        int max=0;
+        if (newTime.getMonthValue() == 1 || newTime.getMonthValue() == 3 || newTime.getMonthValue() == 5 || newTime.getMonthValue() == 7 || newTime.getMonthValue() == 8 || newTime.getMonthValue() == 10 || newTime.getMonthValue() == 12) {
+            max = 31;
+        } else if (newTime.getMonthValue() == 4 || newTime.getMonthValue() == 6 || newTime.getMonthValue() == 9 || newTime.getMonthValue() == 11) {
+            max=30;
+        } else if (newTime.getMonthValue() == 2) {
+            if (newTime.getYear() % 4 == 0 || (newTime.getYear() % 100 == 0 && newTime.getYear() % 400 == 0)) {
+                max=29;
+            } else {
+               max=28;
+            }
+
+        }
+        return max;
+    }
+
 private LocalDateTime getSegmentSeparated(){return null;}
 private boolean compareTime(LocalDateTime biggerTime, LocalDateTime smallerTime){
         if(biggerTime.getYear()>smallerTime.getYear())
