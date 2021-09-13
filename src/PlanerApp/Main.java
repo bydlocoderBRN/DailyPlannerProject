@@ -77,8 +77,10 @@ public class Main extends Application {
         stage.show();
         Plan.trayNote();
         timerAlarm.start();
-        int key = Plan.newPlan("Bday", "Grannys birthday",LocalDateTime.of(2021,9,13,0,0,0), LocalDateTime.of(2021,9,13,3,20,0));
-        Plan.toPlan(key).separatePlan(0,0,0,0,30,0);
+        int key = Plan.newPlan("Bday", "Grannys birthday",LocalDateTime.of(2021,1,1,0,0,0), LocalDateTime.of(2031,1,1,0,0,0));
+//        Plan.toPlan(key).separatePlan(0,0,365,0,0,0);
+
+        Plan.toPlan(key).segmentPlan(13);
         System.out.println(Plan.getAllNotifications());
     }
     public static void main(String[] args) throws Exception{

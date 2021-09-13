@@ -8,6 +8,7 @@ import java.awt.*;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.TreeSet;
@@ -210,15 +211,9 @@ public static void trayNote(){
     }
     catch (Exception err){System.err.println(err);}}
 }
-public void separatePlan(LocalDateTime time){
-        LocalDateTime newTime = plusTime(startTime,time);
-        while (compareTime(finishTime,newTime)){
-            notifications.add(newTime.withNano(Integer.parseInt(Integer.toString(hashNote)+"1")));
-            newTime = plusTime(newTime,time);
-        }
-    }
+
     //-------------------------------------------
-    // ПОФИКСИТЬ!!!
+    // ПОФИКСИТЬ!!! update: пофикшено
     //--Не добавляется первое оповещение которое входит в промежуток
     //--Добавляется лишнее оповещение в конце, которое выходит из промежутка
     //ФИКС (возможный): сделать добавление оповещения в наале цикла while, а не в конце
@@ -226,17 +221,18 @@ public void separatePlan(LocalDateTime time){
     //-----------------------------------------------
     /*Первая часть автоматического раскидывания уведомлений по плану. Пользователь выбирает через какие промежутки времени будут всплывать уведомления в течении плана
     * и метод автоматически разбивает план на эти промежутки.*/
-    public  void separatePlan(int year, int month, int day, int hour, int minute, int second){
-        final int SECOND = second;
-        final int MINUTE = minute;
-        final int HOUR = hour;
-        final int DAY = day;
-        final int MONTH = month;
-        final int YEAR = year;
+    public  void separatePlan(long year, long month, long day, long hour, long minute, long second){
+        final long SECOND = second;
+        final long MINUTE = minute;
+        final long HOUR = hour;
+        final long DAY = day;
+        final long MONTH = month;
+        final long YEAR = year;
         int MAX_DAYS;
-        int updatingMonth=0;
+        long updatingMonth=0;
         LocalDateTime newTime = startTime;
         while(compareTime(finishTime,newTime)){
+            notifications.add(newTime);
             second = SECOND;
             minute = MINUTE;
             hour = HOUR;
@@ -251,23 +247,23 @@ public void separatePlan(LocalDateTime time){
                 second = second - 60;
                 minute +=1;
             }
-            newTime = newTime.withSecond(second);
+            newTime = newTime.withSecond((int)second);
             minute = newTime.getMinute() + minute;
             while (minute>59){
                 minute = minute - 60;
                 hour+=1;
             }
-            newTime = newTime.withMinute(minute);
+            newTime = newTime.withMinute((int)minute);
             hour = newTime.getHour() + hour;
             while (hour>23){
                 hour = hour - 24;
                 day+=1;
             }
             //1,3,5,7,8,10,12 - 31 день
-            newTime = newTime.withHour(hour);
+            newTime = newTime.withHour((int)hour);
             day = newTime.getDayOfMonth() + day;
             /*т.к. дни в зависимости от месяца неравномерны, то реализация обработки дней будет иная. Сначала вычисляется какое максимальное число дней в месяце от которого сейчас идет счет. Если число дней введенных пользователем
-            в сумме с днями даты от которой идет отсчет больше чем это максимальное число, то происходит обработка, и излишки дней перекидываются в месяцы. Поскольку за месяцами надо следить динамически, то излишки сразу прибавляются
+            в сумме с днями даты от которой идет отсчет больше чем это максимальное число, то происходит обработка, и излишки дней перекидываются в месяцы. Поскольку за месяцами надо следить динамически, то эти излишки сразу прибавляются
             к месяцам в дате от которой идет отсчет. Излишки мсяцев тут же перекидываются в годы. Затем вычисляется новое максимальное число дней в месяце и итерация завершается.
 
             */
@@ -280,19 +276,19 @@ public void separatePlan(LocalDateTime time){
                     year+=1;
                     updatingMonth = updatingMonth - 12;
                 }
-                newTime = newTime.withMonth(updatingMonth);
+                newTime = newTime.withMonth((int)updatingMonth);
                 MAX_DAYS = calculateMaxDays(newTime);
             }
-            newTime = newTime.withDayOfMonth(day);
+            newTime = newTime.withDayOfMonth((int)day);
             month = newTime.getMonthValue() + month;
             while (month > 12){
                 month = month-12;
                 year+=1;
             }
-            newTime = newTime.withMonth(month);
+            newTime = newTime.withMonth((int)month);
             year = newTime.getYear()+year;
-            newTime = newTime.withYear(year);
-            notifications.add(newTime);
+            newTime = newTime.withYear((int)year);
+
         }
     }
     //метод определяет максимальное число дней в конкретном месяце. Нужен для правильной работы separatePlan(...)
@@ -312,8 +308,19 @@ public void separatePlan(LocalDateTime time){
         }
         return max;
     }
-
-private LocalDateTime getSegmentSeparated(){return null;}
+/*Метод добавляет заданное пользователем количество оповещений, которые идут через примерно равные интервалы. Сначала вычисляется промежуток (в секундах) между временм начала плана и временем конца плана.
+затем полученный промежуток делится на количество оповещений заданных пользователем. Так получается интервал(в секундах), через который должны идти оповещения. Этот интервал помещается в метод separatePlan(...), и он добавляет нужное количество оповещений.
+Для перевода в LocalDateTime в секунды используется преобразование к типу Instant, который представляет из себя колчество наносекунд от начала Unix исчисления.
+>>>ВАЖНО: разбиение получается с погрешностью +-1 план, потому что при делении интервала на количество планов происходит округление.
+*/
+public void segmentPlan(int numberOfNotes){
+LocalDateTime interval = startTime;
+long secStart = interval.toInstant(ZoneOffset.of("+3")).toEpochMilli()/1000;
+interval = finishTime;
+long secFinish = interval.toInstant(ZoneOffset.of("+3")).toEpochMilli()/1000;
+long periodOfSeconds = (secFinish - secStart)/numberOfNotes;
+separatePlan(0,0,0,0,0,periodOfSeconds);
+}
 private boolean compareTime(LocalDateTime biggerTime, LocalDateTime smallerTime){
         if(biggerTime.getYear()>smallerTime.getYear())
             return true;
