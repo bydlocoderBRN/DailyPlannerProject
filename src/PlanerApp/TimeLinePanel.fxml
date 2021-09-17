@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<fx:root prefHeight="480.0" prefWidth="120.0" type="javafx.scene.layout.AnchorPane" style="-fx-background-color: blue;" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/16">
+      <children>
+      <Slider fx:id="slide1" layoutX="52.0" max="1440.0" orientation="VERTICAL" prefHeight="480.0" prefWidth="17.0" visible="true" />
+      </children>
+</fx:root>

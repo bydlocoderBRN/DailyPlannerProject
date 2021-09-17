@@ -1,13 +1,20 @@
 package PlanerApp;
 
+import PlanerApp.TimeLineController;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.SubScene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 
@@ -68,7 +75,14 @@ public class Main extends Application {
     }
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("TestDailyScene.fxml"));
+
+        TimeLineController tm1 = new TimeLineController();
+        Pane root = (Pane)FXMLLoader.load(getClass().getResource("TestDailyScene.fxml"));
+        tm1.setLayoutX(50);
+        tm1.setLayoutY(0);
+        tm1.setVisible(true);
+        root.getChildren().add(tm1);
+
         Scene sceneTest = new Scene(root);
         stage.setScene(sceneTest);
         stage.setTitle("DailyPlanner");
@@ -78,10 +92,18 @@ public class Main extends Application {
         Plan.trayNote();
         timerAlarm.start();
         int key = Plan.newPlan("Bday", "Grannys birthday",LocalDateTime.of(2021,1,1,0,0,0), LocalDateTime.of(2031,1,1,0,0,0));
-//        Plan.toPlan(key).separatePlan(0,0,365,0,0,0);
-
-        Plan.toPlan(key).segmentPlan(13);
-        System.out.println(Plan.getAllNotifications());
+        root.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                System.out.println(mouseEvent.getSceneX());
+                System.out.println(mouseEvent.getSceneY());
+            }
+        });
+////        Plan.toPlan(key).separatePlan(0,0,365,0,0,0);
+//
+//        Plan.toPlan(key).segmentPlan(13);
+//        System.out.println(Plan.getAllNotifications());
+//
     }
     public static void main(String[] args) throws Exception{
 
