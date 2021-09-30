@@ -23,7 +23,6 @@ public class PlanPanelController extends GridPane implements Initializable {
     TextField txtMinutesFinish;
     @FXML
     TextField txtHoursFinish;
-
     private int key;
     LocalDateTime startPlanTime;
     LocalDateTime finishPlanTime;
@@ -38,12 +37,25 @@ public class PlanPanelController extends GridPane implements Initializable {
         }catch (IOException ex){System.out.println(ex);}
 
     }
-    public void setKey(int newKey){key = newKey;}
+    PlanPanelController(String head, String body, LocalDateTime start, LocalDateTime finish){
+        FXMLLoader loader =new FXMLLoader(getClass().getResource("PlanPanel.fxml"));
+        loader.setRoot(this);
+        loader.setController(this);
+        try {
+            loader.load();
+        }catch (IOException ex){System.out.println(ex);}
+
+        key = Plan.newPlan(head,body,start,finish);
+        setStartTime(Plan.toPlan(key).getStartTime());
+        setFinishPlanTime(Plan.toPlan(key).getFinishTime());
+        setHead(Plan.toPlan(key).getHead());
+        setBody(Plan.toPlan(key).getBody());
+    }
     public int getKey(){return key;}
     public void setHead(String h){head=h;
         txtHead.setText(head);}
     public void setBody (String b){body=b;}
-    public void setStartTime(LocalDateTime s){startPlanTime=s;
+    public void setStartTime(LocalDateTime s){ startPlanTime=s;
         txtHoursStart.setText(Integer.toString(startPlanTime.getHour()));
         txtMinutesStart.setText(Integer.toString(startPlanTime.getMinute()));}
     public void setFinishPlanTime(LocalDateTime f){finishPlanTime=f;
@@ -51,11 +63,11 @@ public class PlanPanelController extends GridPane implements Initializable {
         txtMinutesFinish.setText(Integer.toString(finishPlanTime.getMinute()));}
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        txtHoursStart.setText(Integer.toString(startPlanTime.getHour()));
-        txtMinutesStart.setText(Integer.toString(startPlanTime.getMinute()));
-        txtHoursFinish.setText(Integer.toString(finishPlanTime.getHour()));
-        txtMinutesFinish.setText(Integer.toString(finishPlanTime.getMinute()));
-        txtHead.setText(head);
+//        txtHoursStart.setText(Integer.toString(startPlanTime.getHour()));
+//        txtMinutesStart.setText(Integer.toString(startPlanTime.getMinute()));
+//        txtHoursFinish.setText(Integer.toString(finishPlanTime.getHour()));
+//        txtMinutesFinish.setText(Integer.toString(finishPlanTime.getMinute()));
+//        txtHead.setText(head);
 
     }
 }

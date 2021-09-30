@@ -1,5 +1,6 @@
 package PlanerApp;
 
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -12,6 +13,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ResourceBundle;
@@ -42,49 +44,12 @@ public class AddPlanDialogController extends Pane implements Initializable {
     @FXML
     CheckBox checkTimeAllDay;
     @FXML
-    CheckBox checkDateToday;
-    @FXML
-    CheckBox checkDateTommorow;
-    @FXML
-    CheckBox checkDateNextdDay;
-    @FXML
-    CheckBox checkDateFinish;
+    CheckBox checkDateTomorrow;
     @FXML
     CheckBox checkTimeNow;
-
     private LocalDateTime startTime;
     private LocalDateTime finishTime;
-    @FXML
-    private void timeAllDayChecked(){
-        if(checkTimeNow.isSelected()){
-        startTime = LocalDateTime.now();
-        dateStart.setDisable(true);
-        spinStartHours.setDisable(true);
-        spinStartMinutes.setDisable(true);
-        spinStartSeconds.setDisable(true);}
-        else{
-            dateStart.setDisable(false);
-            spinStartHours.setDisable(false);
-            spinStartMinutes.setDisable(false);
-            spinStartSeconds.setDisable(false);}
-        }
-//        finishTime = LocalDateTime.of()
-
-
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        addPlan.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                startTime = LocalDateTime.of(dateStart.getValue(), LocalTime.of(spinStartHours.getValue(),spinStartMinutes.getValue(), spinStartSeconds.getValue()));
-                finishTime = LocalDateTime.of(dateFinish.getValue(), LocalTime.of(spinFinishHours.getValue(),spinFinishMinutes.getValue(), spinFinishSeconds.getValue()));
-                String head = txtHead.toString();
-                String body = txtHead.toString();
-                ControllerClass.hBoxAddPlan(startTime,finishTime,head,body);
-                System.out.println(Plan.plans);
-            }
-        });
-            }
+    private Stage s = new Stage();
     AddPlanDialogController(){
         FXMLLoader loader = new FXMLLoader(getClass().getResource("AddPlanDialog.fxml"));
         loader.setRoot(this);
@@ -92,5 +57,120 @@ public class AddPlanDialogController extends Pane implements Initializable {
         try {
             loader.load();
         }catch (IOException ex){System.out.println(ex);}
+    }
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        s.setScene(new Scene(this));
+
+        checkTimeNow.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                checkedTimeNow();
+            }
+        });
+
+        checkTimeAllDay.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                checkedTimeAllDay();
+            }
+        });
+
+        checkDateTomorrow.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                checkedDateTomorrow();
+            }
+        });
+
+
+        addPlan.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                if(!checkTimeAllDay.isSelected() && !checkTimeNow.isSelected() && !checkDateTomorrow.isSelected()){
+                    startTime= LocalDateTime.of(dateStart.getValue(), LocalTime.of(spinStartHours.getValue(),spinStartMinutes.getValue(), spinStartSeconds.getValue()));
+                    finishTime = LocalDateTime.of(dateFinish.getValue(), LocalTime.of(spinFinishHours.getValue(),spinFinishMinutes.getValue(), spinFinishSeconds.getValue()));
+                }
+                if (checkTimeAllDay.isSelected()){
+                    startTime = LocalDateTime.now();
+                    finishTime = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
+                }else {
+                    if (checkTimeNow.isSelected() && !checkDateTomorrow.isSelected()) {
+                        startTime = LocalDateTime.now();
+                        finishTime = LocalDateTime.of(dateFinish.getValue(), LocalTime.of(spinFinishHours.getValue(), spinFinishMinutes.getValue(), spinFinishSeconds.getValue()));
+                    }
+                    if (checkDateTomorrow.isSelected() && !checkTimeNow.isSelected()) {
+                        startTime= LocalDateTime.of(dateStart.getValue(), LocalTime.of(spinStartHours.getValue(),spinStartMinutes.getValue(), spinStartSeconds.getValue()));
+                        finishTime = startTime.plusDays(1);
+                    }
+                    if(checkTimeNow.isSelected() && checkDateTomorrow.isSelected()){
+                        startTime = LocalDateTime.now();
+                        finishTime = startTime.plusDays(1);
+                    }
+                }
+                String head = txtHead.toString();
+                String body = txtHead.toString();
+                ControllerClass.hBoxAddPlan(startTime,finishTime,head,body);
+                s.close();
+                System.out.println(Plan.plans);
+
+            }
+        });
+            }
+
+
+    public void open(){
+        s.show();
+    }
+
+    private void checkedTimeNow(){
+        if(checkTimeNow.isSelected()){
+            dateStart.setDisable(true);
+            spinStartHours.setDisable(true);
+            spinStartMinutes.setDisable(true);
+            spinStartSeconds.setDisable(true);
+        }
+        if(!checkTimeNow.isSelected()){
+            dateStart.setDisable(false);
+            spinStartHours.setDisable(false);
+            spinStartMinutes.setDisable(false);
+            spinStartSeconds.setDisable(false);
+        }
+
+    }
+    private void checkedDateTomorrow(){
+        if (checkDateTomorrow.isSelected()){
+            dateFinish.setDisable(true);
+            spinFinishHours.setDisable(true);
+            spinFinishMinutes.setDisable(true);
+            spinFinishSeconds.setDisable(true);
+        }
+        if (!checkDateTomorrow.isSelected()){
+            dateFinish.setDisable(false);
+            spinFinishHours.setDisable(false);
+            spinFinishMinutes.setDisable(false);
+            spinFinishSeconds.setDisable(false);
+        }
+    }
+    private void checkedTimeAllDay(){
+        if (checkTimeAllDay.isSelected()){
+            checkTimeNow.setSelected(true);
+            checkedTimeNow();
+            dateFinish.setDisable(true);
+            spinFinishHours.setDisable(true);
+            spinFinishMinutes.setDisable(true);
+            spinFinishSeconds.setDisable(true);
+
+        }
+        if (!checkTimeAllDay.isSelected()){
+            checkTimeNow.setSelected(false);
+            checkedTimeNow();
+            dateFinish.setDisable(false);
+            spinFinishHours.setDisable(false);
+            spinFinishMinutes.setDisable(false);
+            spinFinishSeconds.setDisable(false);
+
+        }
     }
 }

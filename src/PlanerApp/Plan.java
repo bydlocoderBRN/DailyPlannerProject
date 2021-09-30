@@ -6,11 +6,9 @@ import javafx.scene.control.ButtonType;
 
 import java.awt.*;
 import java.beans.PropertyChangeSupport;
-import java.io.File;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.*;
 import java.awt.TrayIcon.MessageType;
@@ -107,6 +105,7 @@ public LocalDateTime getStartTime(){return startTime;}
 public void setFinishTime(LocalDateTime fTime){finishTime = fTime;}
 public LocalDateTime getFinishTime(){return finishTime;}
 public static TreeSet<LocalDateTime> getAllNotifications () { return notifications; }
+public String getBody(){return content;}
 private static int getHash(){
         globalHashNote+=1;
         return globalHashNote;
@@ -139,13 +138,17 @@ private static int getHash(){
  --Привязал уведомления к конкретному плану через ключ!!!!*/
 public void addNotification(LocalDateTime note){
     note = note.withNano(Integer.parseInt(Integer.toString(hashNote)+"1"));
-    notifications.add(note);
+    if (note.isBefore(LocalDateTime.now())){
+        notifications.add(note);}
+    else {System.out.println("Выбранное время уже прошло");}
 
 
 }
 public void addAlarm(LocalDateTime alarm) {
     alarm = alarm.withNano(Integer.parseInt(Integer.toString(hashNote)+"2"));
-    notifications.add(alarm);
+    if (alarm.isBefore(LocalDateTime.now())){
+    notifications.add(alarm);}
+    else {System.out.println("Выбранное время уже прошло");}
 }
 
 
@@ -232,7 +235,7 @@ public static void trayNote(){
         long updatingMonth=0;
         LocalDateTime newTime = startTime;
         while(compareTime(finishTime,newTime)){
-            notifications.add(newTime);
+            addNotification(newTime);
             second = SECOND;
             minute = MINUTE;
             hour = HOUR;
