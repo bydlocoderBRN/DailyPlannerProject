@@ -63,6 +63,7 @@ public class PlanPanelController extends GridPane implements Initializable {
         txtMinutesFinish.setText(Integer.toString(finishPlanTime.getMinute()));}
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+
 //        txtHoursStart.setText(Integer.toString(startPlanTime.getHour()));
 //        txtMinutesStart.setText(Integer.toString(startPlanTime.getMinute()));
 //        txtHoursFinish.setText(Integer.toString(finishPlanTime.getHour()));

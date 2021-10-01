@@ -109,8 +109,8 @@ public class AddPlanDialogController extends Pane implements Initializable {
                         finishTime = startTime.plusDays(1);
                     }
                 }
-                String head = txtHead.toString();
-                String body = txtHead.toString();
+                String head = txtHead.getText();
+                String body = txtHead.getText();
                 ControllerClass.hBoxAddPlan(startTime,finishTime,head,body);
                 s.close();
                 System.out.println(Plan.plans);

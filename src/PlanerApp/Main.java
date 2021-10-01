@@ -7,12 +7,14 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ListCell;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 
 import java.io.File;
 
+import java.lang.management.PlatformManagedObject;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -29,7 +31,7 @@ public class Main extends Application {
     private static Sound alarm = new Sound(alarmSound);
     public static boolean isAlertNow=false;
     public static String alertHeader;
-
+    public static int globalKey;
     static AnimationTimer timerAlarm = new AnimationTimer() {
         @Override
         public void handle(long l) {
@@ -88,6 +90,7 @@ public class Main extends Application {
         Plan.trayNote();
         timerAlarm.start();
         int key = Plan.newPlan("Bday", "Grannys birthday", LocalDateTime.of(2021, 1, 1, 0, 0, 0), LocalDateTime.of(2031, 1, 1, 0, 0, 0));
+        System.out.println(Plan.plans.keySet());
     }
 
     public static void main(String[] args) throws Exception{
@@ -96,5 +99,6 @@ public class Main extends Application {
 
 
 }
+
 }
 
