@@ -6,10 +6,11 @@ import javafx.scene.control.ButtonType;
 
 import java.awt.*;
 import java.beans.PropertyChangeSupport;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.HashMap;
-import java.util.TreeSet;
+import java.util.*;
+import java.util.List;
 import java.util.concurrent.*;
 import java.awt.TrayIcon.MessageType;
 
@@ -23,7 +24,7 @@ private int hashNote;
 private static int globalHashNote=0;
 private static ExecutorService pool = Executors.newSingleThreadExecutor();
 private static boolean isPoolLaunched = false;
-private static TreeSet<LocalDateTime> notifications = new TreeSet<LocalDateTime>();
+private static TreeMap<Integer,LocalDateTime> notifications = new TreeMap<Integer,LocalDateTime>();
 public static HashMap<Integer,Plan> plans = new HashMap<Integer, Plan>();
 public static    SystemTray tray;
 public static    Image planerIcon;
@@ -104,7 +105,8 @@ public void setStartTime(LocalDateTime sTime){startTime = sTime;}
 public LocalDateTime getStartTime(){return startTime;}
 public void setFinishTime(LocalDateTime fTime){finishTime = fTime;}
 public LocalDateTime getFinishTime(){return finishTime;}
-public static TreeSet<LocalDateTime> getAllNotifications () { return notifications; }
+public static TreeMap<Integer, LocalDateTime> getAllNotifications () { return notifications; }
+    //EDITED FOR TREEMAP
 public String getBody(){return content;}
 private static int getHash(){
         globalHashNote+=1;
@@ -137,19 +139,19 @@ private static int getHash(){
   к созданному плану (через hasmap.get(key)). Куда сохранять и как правильно ипользовать ключ я расписал в main
  --Привязал уведомления к конкретному плану через ключ!!!!*/
 public void addNotification(LocalDateTime note){
-    note = note.withNano(Integer.parseInt(Integer.toString(hashNote)+"1"));
+    note = note.withNano(1);
     if (note.isBefore(LocalDateTime.now())){
-        notifications.add(note);}
+        notifications.put(hashNote,note);}
     else {System.out.println("Выбранное время уже прошло");}
-
-
 }
+    //EDITED FOR TREEMAP
 public void addAlarm(LocalDateTime alarm) {
-    alarm = alarm.withNano(Integer.parseInt(Integer.toString(hashNote)+"2"));
+    alarm = alarm.withNano(2);
     if (alarm.isBefore(LocalDateTime.now())){
-    notifications.add(alarm);}
+    notifications.put(hashNote, alarm);}
     else {System.out.println("Выбранное время уже прошло");}
 }
+//EDITED FOR TREEMAP
 
 
 
@@ -160,12 +162,13 @@ public void addAlarm(LocalDateTime alarm) {
      * т.к. метод каждый раз обращается к notification.first, то при добавлении оповещения, которое должно сработать раньше, метод будет
      * обрабатывать именно его(т.к. notification.first() дает самое близкое к текущему времени оповещение) */
     private static void isNotificationNow () {
-        boolean itis = notifications.first().withNano(0).equals(LocalDateTime.now().withNano(0));
+        boolean itis = notifications.get(notifications.firstKey()).withNano(0).equals(LocalDateTime.now().withNano(0));
         while (itis != true){
-            itis = notifications.first().withNano(0).equals(LocalDateTime.now().withNano(0));
+            itis = notifications.get(notifications.firstKey()).withNano(0).equals(LocalDateTime.now().withNano(0));
 
         }
     }
+    //EDITED FOR TREEMAP
 
     private static void isNotificationEmpty ()
     { boolean emptyNote= notifications.isEmpty();
@@ -178,21 +181,21 @@ public void addAlarm(LocalDateTime alarm) {
 
 
     private static String wichNotificationNow(){
-        int hash = notifications.first().getNano()/10;
+        int hash = notifications.firstKey();
         return plans.get(hash).getHead();
     }
     public static void startNote(){
-        if(notifications.first().getNano()%10 ==1 ){
+        if(notifications.get(notifications.firstKey()).getNano()%10 ==1 ){
             System.out.println("Notification!!" + wichNotificationNow());
                trayIcon.displayMessage("Notify!",wichNotificationNow(), MessageType.INFO);
-            notifications.remove(notifications.first());
+            notifications.remove(notifications.get(notifications.firstKey()));
            pool.execute(noteDetector);
             ;}
-        else if(notifications.first().getNano()%10 ==2 ){
+        else if(notifications.get(notifications.firstKey()).getNano()%10 ==2 ){
             System.out.println("Alarm!!!" + wichNotificationNow());
             Main.isAlertNow=true;
             Main.alertHeader=wichNotificationNow();
-            notifications.remove(notifications.first());
+            notifications.remove(notifications.get(notifications.firstKey()));
 
           pool.execute(noteDetector);
             ;
@@ -343,7 +346,19 @@ private LocalDateTime plusTime(LocalDateTime time1, LocalDateTime time2){
         return LocalDateTime.of(time1.getYear()+time2.getYear(),time1.getMonthValue()+time2.getMonthValue(),
                 time1.getDayOfMonth() + time2.getDayOfMonth(),time1.getHour()+time2.getHour(),time1.getMinute()+time2.getMinute(),time1.getSecond()+time2.getSecond());
 }
-
+public static ArrayList<Integer> plansDayFilter(LocalDate dateCurr){
+    ArrayList<Integer> keys = new ArrayList<Integer>();
+    LocalDate finish;
+    LocalDate start;
+    for (int i : plans.keySet()){
+        finish = LocalDate.of(Plan.toPlan(i).getFinishTime().getYear(),Plan.toPlan(i).getFinishTime().getMonthValue(),Plan.toPlan(i).getFinishTime().getDayOfMonth());
+        start = LocalDate.of(Plan.toPlan(i).getStartTime().getYear(),Plan.toPlan(i).getStartTime().getMonthValue(),Plan.toPlan(i).getStartTime().getDayOfMonth());
+        if(finish.isEqual(dateCurr) || start.isEqual(dateCurr)){
+            keys.add(i);
+        }
+    }
+    return keys;
+}
 
 }
 

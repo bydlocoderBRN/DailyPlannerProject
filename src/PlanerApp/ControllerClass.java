@@ -6,6 +6,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 
@@ -13,6 +15,7 @@ import javafx.scene.Scene;
 
 import javafx.scene.control.Button;
 
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
@@ -21,6 +24,7 @@ import javafx.util.Callback;
 
 
 import java.net.URL;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import java.util.ResourceBundle;
@@ -38,6 +42,8 @@ public class ControllerClass implements Initializable {
     @FXML
     public ListView<Integer> listPlans;
     @FXML
+    public DatePicker dateMain;
+    @FXML
     private void btnClick(){
         planDialog = new AddPlanDialogController();
 //        Stage s = new Stage();
@@ -48,21 +54,29 @@ public class ControllerClass implements Initializable {
     private static HBox hBoxPlans;
     private static ObservableList<Integer> keysList;
     public static void hBoxAddPlan(LocalDateTime start, LocalDateTime finish, String head, String body){
-        PlanPanelController p1 = new PlanPanelController(head, body,start,finish);
-        hBoxPlans.getChildren().add(p1);
-        System.out.println((Integer) p1.getKey() + "p1.getkey");
-        keysList.add((Integer) p1.getKey());
-        System.out.println(keysList);
-        System.out.println(hBoxPlans);
-
+//        PlanPanelController p1 = new PlanPanelController(head, body,start,finish);
+//        hBoxPlans.getChildren().add(p1);
+//        keysList.add((Integer) p1.getKey());
+        Plan.newPlan(head,body,start,finish);
+        keysList.clear();
+        keysList.addAll(Plan.plansDayFilter(dateCurr));
     }
 
+private static LocalDate dateCurr;
+
+    private void createPlanPanels(ObservableList<Integer> keys){
+        for (int i:keys) {
+            PlanPanelController p1 = new PlanPanelController(i);
+            hBoxPlans.getChildren().add(p1);
+        }
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        dateMain.setValue(LocalDate.now());
+        dateCurr = dateMain.getValue();
         hBoxPlans = h1;
-        keysList = FXCollections.observableArrayList(Plan.plans.keySet());
-        System.out.println(keysList);
+        keysList = FXCollections.observableArrayList(Plan.plansDayFilter(dateCurr));
         listPlans.setItems(keysList);
 
         listPlans.setCellFactory(new Callback<ListView<Integer>, ListCell<Integer>>() {
@@ -72,12 +86,20 @@ public class ControllerClass implements Initializable {
                 return new CellFactoryPlan();
 
             }
+
         });
 
         listPlans.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Integer>() {
             @Override
             public void changed(ObservableValue<? extends Integer> observableValue, Integer integer, Integer t1) {
                 globalKey = t1;
+            }
+        });
+        dateMain.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                keysList.clear();
+                keysList.addAll(Plan.plansDayFilter(dateMain.getValue()));
             }
         });
     }

@@ -37,19 +37,22 @@ public class PlanPanelController extends GridPane implements Initializable {
         }catch (IOException ex){System.out.println(ex);}
 
     }
-    PlanPanelController(String head, String body, LocalDateTime start, LocalDateTime finish){
+    PlanPanelController(int key){
         FXMLLoader loader =new FXMLLoader(getClass().getResource("PlanPanel.fxml"));
         loader.setRoot(this);
         loader.setController(this);
         try {
             loader.load();
         }catch (IOException ex){System.out.println(ex);}
-
-        key = Plan.newPlan(head,body,start,finish);
         setStartTime(Plan.toPlan(key).getStartTime());
         setFinishPlanTime(Plan.toPlan(key).getFinishTime());
         setHead(Plan.toPlan(key).getHead());
         setBody(Plan.toPlan(key).getBody());
+//        key = Plan.newPlan(head,body,start,finish);
+//        setStartTime(Plan.toPlan(key).getStartTime());
+//        setFinishPlanTime(Plan.toPlan(key).getFinishTime());
+//        setHead(Plan.toPlan(key).getHead());
+//        setBody(Plan.toPlan(key).getBody());
     }
     public int getKey(){return key;}
     public void setHead(String h){head=h;
