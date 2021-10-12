@@ -37,13 +37,15 @@ public class PlanPanelController extends GridPane implements Initializable {
         }catch (IOException ex){System.out.println(ex);}
 
     }
-    PlanPanelController(int key){
+    //Теперь панель плана не содержит самого плана, а лишь его ключ. При создании нового плана тот сначала добавляется в plans а потом на основе его ключа создается панель
+    PlanPanelController(int planKey){
         FXMLLoader loader =new FXMLLoader(getClass().getResource("PlanPanel.fxml"));
         loader.setRoot(this);
         loader.setController(this);
         try {
             loader.load();
         }catch (IOException ex){System.out.println(ex);}
+        key=planKey;
         setStartTime(Plan.toPlan(key).getStartTime());
         setFinishPlanTime(Plan.toPlan(key).getFinishTime());
         setHead(Plan.toPlan(key).getHead());

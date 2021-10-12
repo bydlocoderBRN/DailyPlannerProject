@@ -1,16 +1,10 @@
 package PlanerApp;
 
-
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-
 import java.awt.*;
-import java.beans.PropertyChangeSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.*;
 import java.awt.TrayIcon.MessageType;
 
@@ -21,36 +15,33 @@ private LocalDateTime finishTime;
 private String head;
 private String content;
 private int hashNote;
+private int notificationCount=0;
 private static int globalHashNote=0;
 private static ExecutorService pool = Executors.newSingleThreadExecutor();
 private static boolean isPoolLaunched = false;
-private static TreeMap<Integer,LocalDateTime> notifications = new TreeMap<Integer,LocalDateTime>();
+private static TreeMap<String,LocalDateTime> notifications = new TreeMap<String,LocalDateTime>();
 public static HashMap<Integer,Plan> plans = new HashMap<Integer, Plan>();
 public static    SystemTray tray;
 public static    Image planerIcon;
 public static    TrayIcon trayIcon;
 
-protected PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
-
-
-
-   public static Runnable noteDetector = new Runnable() {
-        @Override
-        public void run() {
-            isNotificationEmpty();
-            startNote();
-        }
-    };
-//НЕ ЗАБЫТЬ ПРО shutdown!!!!!!!!!!!!!!!
-//Сделать так чтобы весь TreeSet улетал в пул, а при добавлении новый элемент просто добавляется в пул. Результат выводится по готовности. P.S. отказался от такой реализации в пользу отслеживания первого элементра в TreeSet
-// При этом .get() должен забирать результат у первого завершенного потока.
-    //Статичный пул и TreeSet, позволют значительно снизить нагрузку на процессо при создании параллельных планов с оповещениями в каждом.
-    //Нагрузка при старой реализации равна 15% на каждый новый план. При новой: 10-12% на всё!!!!!
 
 
 
 
-Plan(){
+
+//==============================================================================================================================================================================================================================\
+    //Plan
+//==============================================================================================================================================================================================================================\
+    public String getHead(){return head;}
+    public void setStartTime(LocalDateTime sTime){startTime = sTime;}
+    public LocalDateTime getStartTime(){return startTime;}
+    public void setFinishTime(LocalDateTime fTime){finishTime = fTime;}
+    public LocalDateTime getFinishTime(){return finishTime;}
+    public String getBody(){return content;}
+
+
+    Plan(){
     hashNote = globalHashNote;
     startTime = LocalDateTime.of(1970,1,1,0,0,0);
     finishTime = LocalDateTime.of(1970,1,1,0,0,1);
@@ -100,133 +91,12 @@ Plan(){
     public static Plan toPlan(int key){
         return plans.get(key);
     }
-public String getHead(){return head;}
-public void setStartTime(LocalDateTime sTime){startTime = sTime;}
-public LocalDateTime getStartTime(){return startTime;}
-public void setFinishTime(LocalDateTime fTime){finishTime = fTime;}
-public LocalDateTime getFinishTime(){return finishTime;}
-public static TreeMap<Integer, LocalDateTime> getAllNotifications () { return notifications; }
-    //EDITED FOR TREEMAP
-public String getBody(){return content;}
-private static int getHash(){
+
+    private static int getHash(){
         globalHashNote+=1;
         return globalHashNote;
     };
 
-
-/* Реализация уведомлений и будильников:
-* при добавлении нового уведомления или будильника(далее объект) наносекунды в добавляемом объекте меняются на 1(уведомление) или 2(будильник)
-* для дальнейшего распознавания . Затем объект добавляется в TreeSet, где автоматически сортируется(first() - самое близкое к текущему время).
-* Затем result присваивается будущая переменная(Future) и задача(isNotificationNow) добавляется в пул, где в дальнейшем запускается фоновый
-* асинхронный поток (см.ниже) */
-// 1 - note
-// 2 - alarm
-
-    /*Новая реализация:
-    * в конструкторе запускается асинхронный поток с постоянной проверкой пустой ли TreeSet. Как только он не пустой запускается isNotificationNow.
-    * Когда рекурсия завершается, должно сработать событие, которое запускает оповещение, удаляет notifications.first(), и запускает поток */
-
-    /* Новейшая реализация!!! От рекурсии отказался по причине система не вывозит столько рекурсий. Вместо рекурсии теперь цикл while. Он дает точность в отслеживании оповещений
-    вплоть до 0.01 наносекунды, но при этом увеличивает нагрузку на процессор при остлеживании одного оповещения на ~10%. А если пользователю надо будет отслеживать 10 оповещений
-    в 10 разных планах??? Тогда компьютор просто взорвется, если я попытаюсь вызвать 10 фоновых потоков по 10% нагрузки процессора каждый. Что же делать?? ПРАВИЛЬНО:
-    создать один общий TreeSet для всех оповещений и будильников! При этом, если оповещения совпадают, одно из них удалять. Есди по времени совпадают оповещение и будильник то их
-    индекс(наносекунды) сделать равным 3. Остается только решить вопрос с привязкой оповещения к конкретному плану!*/
-// ==================================================================================================================================================================================
-/*Реализация множества планов + некоторые изменения от 30 августа.
- --Отказался от callable в пользу runnable. От первого слищком много мороки и мне уже не нужно ничего возвращать из потока.
- --Ввел глобальный список планов (HashMap), который состоит из ключа и плана. Добавление нового плана осуществляется только через newPlan(). Этот метод создает новый объект без ссылки,
- берет ключ в генераторе и закидывает в HashMap ключ и план. Обязательно надо сохранять ключ, который возвращает метод newPlan, потому что через него осуществляется доступ
-  к созданному плану (через hasmap.get(key)). Куда сохранять и как правильно ипользовать ключ я расписал в main
- --Привязал уведомления к конкретному плану через ключ!!!!*/
-public void addNotification(LocalDateTime note){
-    note = note.withNano(1);
-    if (note.isBefore(LocalDateTime.now())){
-        notifications.put(hashNote,note);}
-    else {System.out.println("Выбранное время уже прошло");}
-}
-    //EDITED FOR TREEMAP
-public void addAlarm(LocalDateTime alarm) {
-    alarm = alarm.withNano(2);
-    if (alarm.isBefore(LocalDateTime.now())){
-    notifications.put(hashNote, alarm);}
-    else {System.out.println("Выбранное время уже прошло");}
-}
-//EDITED FOR TREEMAP
-
-
-
-
-    /* Метод isNotificationNow не прекращается пока время близжайшего уведомления/будильника(first()) не совпадет с временем системы.
-     * Этот метод помещен в отдельный поток для асинхронного выполнения в фоне. Как только метод выходит из петли, первая запись в TreeSet
-     * стирается
-     * т.к. метод каждый раз обращается к notification.first, то при добавлении оповещения, которое должно сработать раньше, метод будет
-     * обрабатывать именно его(т.к. notification.first() дает самое близкое к текущему времени оповещение) */
-    private static void isNotificationNow () {
-        boolean itis = notifications.get(notifications.firstKey()).withNano(0).equals(LocalDateTime.now().withNano(0));
-        while (itis != true){
-            itis = notifications.get(notifications.firstKey()).withNano(0).equals(LocalDateTime.now().withNano(0));
-
-        }
-    }
-    //EDITED FOR TREEMAP
-
-    private static void isNotificationEmpty ()
-    { boolean emptyNote= notifications.isEmpty();
-        while(emptyNote){
-            emptyNote = notifications.isEmpty();
-        }
-
-        isNotificationNow();
-    }
-
-
-    private static String wichNotificationNow(){
-        int hash = notifications.firstKey();
-        return plans.get(hash).getHead();
-    }
-    public static void startNote(){
-        if(notifications.get(notifications.firstKey()).getNano()%10 ==1 ){
-            System.out.println("Notification!!" + wichNotificationNow());
-               trayIcon.displayMessage("Notify!",wichNotificationNow(), MessageType.INFO);
-            notifications.remove(notifications.get(notifications.firstKey()));
-           pool.execute(noteDetector);
-            ;}
-        else if(notifications.get(notifications.firstKey()).getNano()%10 ==2 ){
-            System.out.println("Alarm!!!" + wichNotificationNow());
-            Main.isAlertNow=true;
-            Main.alertHeader=wichNotificationNow();
-            notifications.remove(notifications.get(notifications.firstKey()));
-
-          pool.execute(noteDetector);
-            ;
-        }
-
-
-            }
-public static void trayNote(){
-        if (SystemTray.isSupported()){
-    try {
-
-        tray = SystemTray.getSystemTray();
-        planerIcon = Toolkit.getDefaultToolkit().getImage("trayIcon.gif");
-        trayIcon = new TrayIcon(planerIcon, "your Daily Planer");
-        trayIcon.setImageAutoSize(true);
-        trayIcon.setToolTip("A daily planer notification");
-        tray.add(trayIcon);
-
-    }
-    catch (Exception err){System.err.println(err);}}
-}
-
-    //-------------------------------------------
-    // ПОФИКСИТЬ!!! update: пофикшено
-    //--Не добавляется первое оповещение которое входит в промежуток
-    //--Добавляется лишнее оповещение в конце, которое выходит из промежутка
-    //ФИКС (возможный): сделать добавление оповещения в наале цикла while, а не в конце
-    //Хорошенько протестить метод!!! Особенно для дней!!!!!!!!!!!
-    //-----------------------------------------------
-    /*Первая часть автоматического раскидывания уведомлений по плану. Пользователь выбирает через какие промежутки времени будут всплывать уведомления в течении плана
-    * и метод автоматически разбивает план на эти промежутки.*/
     public  void separatePlan(long year, long month, long day, long hour, long minute, long second){
         final long SECOND = second;
         final long MINUTE = minute;
@@ -308,26 +178,26 @@ public static void trayNote(){
             if (newTime.getYear() % 4 == 0 || (newTime.getYear() % 100 == 0 && newTime.getYear() % 400 == 0)) {
                 max=29;
             } else {
-               max=28;
+                max=28;
             }
 
         }
         return max;
     }
-/*Метод добавляет заданное пользователем количество оповещений, которые идут через примерно равные интервалы. Сначала вычисляется промежуток (в секундах) между временм начала плана и временем конца плана.
-затем полученный промежуток делится на количество оповещений заданных пользователем. Так получается интервал(в секундах), через который должны идти оповещения. Этот интервал помещается в метод separatePlan(...), и он добавляет нужное количество оповещений.
-Для перевода в LocalDateTime в секунды используется преобразование к типу Instant, который представляет из себя колчество наносекунд от начала Unix исчисления.
->>>ВАЖНО: разбиение получается с погрешностью +-1 план, потому что при делении интервала на количество планов происходит округление.
-*/
-public void segmentPlan(int numberOfNotes){
-LocalDateTime interval = startTime;
-long secStart = interval.toInstant(ZoneOffset.of("+3")).toEpochMilli()/1000;
-interval = finishTime;
-long secFinish = interval.toInstant(ZoneOffset.of("+3")).toEpochMilli()/1000;
-long periodOfSeconds = (secFinish - secStart)/numberOfNotes;
-separatePlan(0,0,0,0,0,periodOfSeconds);
-}
-private boolean compareTime(LocalDateTime biggerTime, LocalDateTime smallerTime){
+    /*Метод добавляет заданное пользователем количество оповещений, которые идут через примерно равные интервалы. Сначала вычисляется промежуток (в секундах) между временм начала плана и временем конца плана.
+    затем полученный промежуток делится на количество оповещений заданных пользователем. Так получается интервал(в секундах), через который должны идти оповещения. Этот интервал помещается в метод separatePlan(...), и он добавляет нужное количество оповещений.
+    Для перевода в LocalDateTime в секунды используется преобразование к типу Instant, который представляет из себя колчество наносекунд от начала Unix исчисления.
+    >>>ВАЖНО: разбиение получается с погрешностью +-1 план, потому что при делении интервала на количество планов происходит округление.
+    */
+    public void segmentPlan(int numberOfNotes){
+        LocalDateTime interval = startTime;
+        long secStart = interval.toInstant(ZoneOffset.of("+3")).toEpochMilli()/1000;
+        interval = finishTime;
+        long secFinish = interval.toInstant(ZoneOffset.of("+3")).toEpochMilli()/1000;
+        long periodOfSeconds = (secFinish - secStart)/numberOfNotes;
+        separatePlan(0,0,0,0,0,periodOfSeconds);
+    }
+    private boolean compareTime(LocalDateTime biggerTime, LocalDateTime smallerTime){
         if(biggerTime.getYear()>smallerTime.getYear())
             return true;
         else if(biggerTime.getYear()==smallerTime.getYear() && biggerTime.getMonthValue()>smallerTime.getMonthValue())
@@ -341,24 +211,191 @@ private boolean compareTime(LocalDateTime biggerTime, LocalDateTime smallerTime)
         else if(biggerTime.getYear()==smallerTime.getYear() && biggerTime.getMonthValue()==smallerTime.getMonthValue() && biggerTime.getDayOfMonth()==smallerTime.getDayOfMonth() && biggerTime.getHour()==smallerTime.getHour() && biggerTime.getMinute()==smallerTime.getMinute() && biggerTime.getSecond()>smallerTime.getSecond())
             return true;
         else return false;
-}
-private LocalDateTime plusTime(LocalDateTime time1, LocalDateTime time2){
+    }
+    private LocalDateTime plusTime(LocalDateTime time1, LocalDateTime time2){
         return LocalDateTime.of(time1.getYear()+time2.getYear(),time1.getMonthValue()+time2.getMonthValue(),
                 time1.getDayOfMonth() + time2.getDayOfMonth(),time1.getHour()+time2.getHour(),time1.getMinute()+time2.getMinute(),time1.getSecond()+time2.getSecond());
-}
-public static ArrayList<Integer> plansDayFilter(LocalDate dateCurr){
-    ArrayList<Integer> keys = new ArrayList<Integer>();
-    LocalDate finish;
-    LocalDate start;
-    for (int i : plans.keySet()){
-        finish = LocalDate.of(Plan.toPlan(i).getFinishTime().getYear(),Plan.toPlan(i).getFinishTime().getMonthValue(),Plan.toPlan(i).getFinishTime().getDayOfMonth());
-        start = LocalDate.of(Plan.toPlan(i).getStartTime().getYear(),Plan.toPlan(i).getStartTime().getMonthValue(),Plan.toPlan(i).getStartTime().getDayOfMonth());
-        if(finish.isEqual(dateCurr) || start.isEqual(dateCurr)){
-            keys.add(i);
+    }
+    public static ArrayList<Integer> plansDayFilter(LocalDate dateCurr){
+        ArrayList<Integer> keys = new ArrayList<Integer>();
+        LocalDate finish;
+        LocalDate start;
+        for (int i : plans.keySet()){
+            finish = LocalDate.of(Plan.toPlan(i).getFinishTime().getYear(),Plan.toPlan(i).getFinishTime().getMonthValue(),Plan.toPlan(i).getFinishTime().getDayOfMonth());
+            start = LocalDate.of(Plan.toPlan(i).getStartTime().getYear(),Plan.toPlan(i).getStartTime().getMonthValue(),Plan.toPlan(i).getStartTime().getDayOfMonth());
+            if(finish.isEqual(dateCurr) || start.isEqual(dateCurr) || (finish.isAfter(dateCurr)&&start.isBefore(dateCurr))){
+                keys.add(i);
+            }
+        }
+        return keys;
+    }
+
+//==============================================================================================================================================================================================================================\
+    //\Plan\
+//==============================================================================================================================================================================================================================\
+
+
+//==============================================================================================================================================================================================================================\
+    //Notifications
+//==============================================================================================================================================================================================================================\
+//1-note 2-alarm
+    public static TreeMap<String, LocalDateTime> getAllNotifications () { return notifications; }
+    //EDITED FOR TREEMAP
+
+    //Структура ключа для оповещений <порядковый_номер.тип.ключ_плана> пример: 15001002
+    public void addNotification(LocalDateTime note){
+        notificationCount+=1;
+        String key = notificationCount + "." + "1" + "." + hashNote;
+        if (note.isBefore(LocalDateTime.now())){
+            notifications.put(key,note);}
+        else {System.out.println("Выбранное время уже прошло");}
+    }
+    //EDITED FOR TREEMAP
+    public void addAlarm(LocalDateTime alarm) {
+        notificationCount+=1;
+        String key = notificationCount + "." + "2" + "." + hashNote;
+        if (alarm.isBefore(LocalDateTime.now())){
+            notifications.put(key, alarm);}
+        else {System.out.println("Выбранное время уже прошло");}
+    }
+//EDITED FOR TREEMAP
+
+    public static int getNotificationCount(String noteKey){
+        return Integer.parseInt(noteKey.split(".")[0]);
+
+    }
+    public static int getNotificationType(String noteKey){
+        return Integer.parseInt(noteKey.split(".")[1]);
+
+    }
+
+    public static int getNotificationPLanKey(String noteKey){
+        return Integer.parseInt(noteKey.split(".")[2]);
+
+    }
+    public static Runnable noteDetector = new Runnable() {
+        @Override
+        public void run() {
+            isNotificationEmpty();
+            startNote();
+        }
+    };
+
+    private static void isNotificationNow () {
+        boolean itis = notifications.get(notifications.firstKey()).withNano(0).equals(LocalDateTime.now().withNano(0));
+        while (itis != true){
+            itis = notifications.get(notifications.firstKey()).withNano(0).equals(LocalDateTime.now().withNano(0));
+
         }
     }
-    return keys;
-}
+    //EDITED FOR TREEMAP
+
+    private static void isNotificationEmpty ()
+    { boolean emptyNote= notifications.isEmpty();
+        while(emptyNote){
+            emptyNote = notifications.isEmpty();
+        }
+
+        isNotificationNow();
+    }
+
+
+    private static String wichNotificationNow(){
+        int hash = Plan.getNotificationPLanKey(notifications.firstKey());
+        return plans.get(hash).getHead();
+    }
+    public static void startNote(){
+        if(notifications.get(notifications.firstKey()).getNano()%10 ==1 ){
+            System.out.println("Notification!!" + wichNotificationNow());
+            trayIcon.displayMessage("Notify!",wichNotificationNow(), MessageType.INFO);
+            notifications.remove(notifications.firstKey());
+            pool.execute(noteDetector);
+            ;}
+        else if(notifications.get(notifications.firstKey()).getNano()%10 ==2 ){
+            System.out.println("Alarm!!!" + wichNotificationNow());
+            Main.isAlertNow=true;
+            Main.alertHeader=wichNotificationNow();
+            notifications.remove(notifications.firstKey());
+
+            pool.execute(noteDetector);
+            ;
+        }
+
+
+    }
+    public static void trayNote(){
+        if (SystemTray.isSupported()){
+            try {
+
+                tray = SystemTray.getSystemTray();
+                planerIcon = Toolkit.getDefaultToolkit().getImage("trayIcon.gif");
+                trayIcon = new TrayIcon(planerIcon, "your Daily Planer");
+                trayIcon.setImageAutoSize(true);
+                trayIcon.setToolTip("A daily planer notification");
+                tray.add(trayIcon);
+
+            }
+            catch (Exception err){System.err.println(err);}}
+    }
+//==============================================================================================================================================================================================================================\
+    //\Notifications\
+//==============================================================================================================================================================================================================================\
+
+
+//==============================================================================================================================================================================================================================\
+    //Comments
+//==============================================================================================================================================================================================================================\
+    //НЕ ЗАБЫТЬ ПРО shutdown!!!!!!!!!!!!!!!
+//Сделать так чтобы весь TreeSet улетал в пул, а при добавлении новый элемент просто добавляется в пул. Результат выводится по готовности. P.S. отказался от такой реализации в пользу отслеживания первого элементра в TreeSet
+// При этом .get() должен забирать результат у первого завершенного потока.
+    //Статичный пул и TreeSet, позволют значительно снизить нагрузку на процессо при создании параллельных планов с оповещениями в каждом.
+    //Нагрузка при старой реализации равна 15% на каждый новый план. При новой: 10-12% на всё!!!!!
+
+    //-------------------------------------------
+    // ПОФИКСИТЬ!!! update: пофикшено
+    //--Не добавляется первое оповещение которое входит в промежуток
+    //--Добавляется лишнее оповещение в конце, которое выходит из промежутка
+    //ФИКС (возможный): сделать добавление оповещения в наале цикла while, а не в конце
+    //Хорошенько протестить метод!!! Особенно для дней!!!!!!!!!!!
+    //-----------------------------------------------
+    /*Первая часть автоматического раскидывания уведомлений по плану. Пользователь выбирает через какие промежутки времени будут всплывать уведомления в течении плана
+     * и метод автоматически разбивает план на эти промежутки.*/
+
+
+    /* Реализация уведомлений и будильников:
+* при добавлении нового уведомления или будильника(далее объект) наносекунды в добавляемом объекте меняются на 1(уведомление) или 2(будильник)
+* для дальнейшего распознавания . Затем объект добавляется в TreeSet, где автоматически сортируется(first() - самое близкое к текущему время).
+* Затем result присваивается будущая переменная(Future) и задача(isNotificationNow) добавляется в пул, где в дальнейшем запускается фоновый
+* асинхронный поток (см.ниже) */
+// 1 - note
+// 2 - alarm
+
+    /*Новая реализация:
+    * в конструкторе запускается асинхронный поток с постоянной проверкой пустой ли TreeSet. Как только он не пустой запускается isNotificationNow.
+    * Когда рекурсия завершается, должно сработать событие, которое запускает оповещение, удаляет notifications.first(), и запускает поток */
+
+    /* Новейшая реализация!!! От рекурсии отказался по причине система не вывозит столько рекурсий. Вместо рекурсии теперь цикл while. Он дает точность в отслеживании оповещений
+    вплоть до 0.01 наносекунды, но при этом увеличивает нагрузку на процессор при остлеживании одного оповещения на ~10%. А если пользователю надо будет отслеживать 10 оповещений
+    в 10 разных планах??? Тогда компьютор просто взорвется, если я попытаюсь вызвать 10 фоновых потоков по 10% нагрузки процессора каждый. Что же делать?? ПРАВИЛЬНО:
+    создать один общий TreeSet для всех оповещений и будильников! При этом, если оповещения совпадают, одно из них удалять. Есди по времени совпадают оповещение и будильник то их
+    индекс(наносекунды) сделать равным 3. Остается только решить вопрос с привязкой оповещения к конкретному плану!*/
+// ==================================================================================================================================================================================
+/*Реализация множества планов + некоторые изменения от 30 августа.
+ --Отказался от callable в пользу runnable. От первого слищком много мороки и мне уже не нужно ничего возвращать из потока.
+ --Ввел глобальный список планов (HashMap), который состоит из ключа и плана. Добавление нового плана осуществляется только через newPlan(). Этот метод создает новый объект без ссылки,
+ берет ключ в генераторе и закидывает в HashMap ключ и план. Обязательно надо сохранять ключ, который возвращает метод newPlan, потому что через него осуществляется доступ
+  к созданному плану (через hasmap.get(key)). Куда сохранять и как правильно ипользовать ключ я расписал в main
+ --Привязал уведомления к конкретному плану через ключ!!!!*/
+
+
+    /* Метод isNotificationNow не прекращается пока время близжайшего уведомления/будильника(first()) не совпадет с временем системы.
+     * Этот метод помещен в отдельный поток для асинхронного выполнения в фоне. Как только метод выходит из петли, первая запись в TreeSet
+     * стирается
+     * т.к. метод каждый раз обращается к notification.first, то при добавлении оповещения, которое должно сработать раньше, метод будет
+     * обрабатывать именно его(т.к. notification.first() дает самое близкое к текущему времени оповещение) */
+
+
+
 
 }
 

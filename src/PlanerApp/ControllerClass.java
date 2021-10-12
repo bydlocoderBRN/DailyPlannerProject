@@ -13,11 +13,8 @@ import javafx.fxml.Initializable;
 
 import javafx.scene.Scene;
 
-import javafx.scene.control.Button;
+import javafx.scene.control.*;
 
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -34,7 +31,10 @@ import java.util.ResourceBundle;
   key значение ключа меняется на то, которое заложено в элементе. Через key будет осуществлен доступ ко всем планам в HashMap*/
 public class ControllerClass implements Initializable {
     public static int globalKey;
+    private static HBox hBoxPlans;
+    private static ObservableList<Integer> keysList;
     AddPlanDialogController planDialog;
+    private static LocalDate dateCurr;
     @FXML
     private Button btnAddPlan;
     @FXML
@@ -43,74 +43,94 @@ public class ControllerClass implements Initializable {
     public ListView<Integer> listPlans;
     @FXML
     public DatePicker dateMain;
+
+
+//    public static void hBoxAddPlan(LocalDateTime start, LocalDateTime finish, String head, String body){
+////        PlanPanelController p1 = new PlanPanelController(head, body,start,finish);
+////        hBoxPlans.getChildren().add(p1);
+////        keysList.add((Integer) p1.getKey());
+//        Plan.newPlan(head,body,start,finish);
+//        updateFilteredKeysList();
+//    }
+
+
+
+/*Реализация системы хранения планов и навигации по ним.
+-> Элемент PlanPanel теперь не содержит самого плана и не создает новый план. В конструктор просто передается ключ нужного плана
+-> При любом изменении plans (а сейчас plans меняется только после добавления нового плана через диалоговое окно) вызывается функция updateFilteredKeysList(далее update), которая помещает в keysList только планы, которые есть в выбранный пользователем день,
+а затем вызывает функцию отрисовки панелей планов в приложении.
+->Также update вызыается когда интерфейс загружается и при изменении пользователем дня, который он просматривает.
+->Отрисовка происходит путем очищения hBox для планов и отрисовки всех элементов keysList.
+->update работает следующим образом: в oldKeys сохраняется текущее состояние keysList, keysList очищается и в него помещаются все ключи всех планов ввыбранный денб(Plan.plansDayFilter)*/
     @FXML
     private void btnClick(){
         planDialog = new AddPlanDialogController();
-//        Stage s = new Stage();
-//        s.setScene(new Scene(planDialog));
-//        s.show();
         planDialog.open();
     }
-    private static HBox hBoxPlans;
-    private static ObservableList<Integer> keysList;
-    public static void hBoxAddPlan(LocalDateTime start, LocalDateTime finish, String head, String body){
-//        PlanPanelController p1 = new PlanPanelController(head, body,start,finish);
-//        hBoxPlans.getChildren().add(p1);
-//        keysList.add((Integer) p1.getKey());
-        Plan.newPlan(head,body,start,finish);
+    public static void updateFilteredKeysList(){
+        ObservableList<Integer> oldKeys = FXCollections.observableArrayList(keysList);;
         keysList.clear();
         keysList.addAll(Plan.plansDayFilter(dateCurr));
+        System.out.println("KeysList: " + keysList);
+        System.out.println("OldKeys" + keysList);
+            createPlanPanels(keysList, oldKeys);
     }
 
-private static LocalDate dateCurr;
-
-    private void createPlanPanels(ObservableList<Integer> keys){
-        for (int i:keys) {
-            PlanPanelController p1 = new PlanPanelController(i);
-            hBoxPlans.getChildren().add(p1);
+    private static void createPlanPanels(ObservableList<Integer> newKeys, ObservableList<Integer> oldKeys){
+        if(!newKeys.equals(oldKeys)) {
+            if (!newKeys.isEmpty()) {
+                hBoxPlans.getChildren().clear();
+                for (int i : newKeys) {
+                    PlanPanelController p1 = new PlanPanelController(i);
+                    hBoxPlans.getChildren().add(p1);
+                }
+            }
+            if (newKeys.isEmpty()) {
+                hBoxPlans.getChildren().clear();
+            }
         }
     }
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         dateMain.setValue(LocalDate.now());
         dateCurr = dateMain.getValue();
         hBoxPlans = h1;
         keysList = FXCollections.observableArrayList(Plan.plansDayFilter(dateCurr));
+        updateFilteredKeysList();
         listPlans.setItems(keysList);
-
         listPlans.setCellFactory(new Callback<ListView<Integer>, ListCell<Integer>>() {
             @Override
             public ListCell<Integer> call(ListView<Integer> integerListView) {
-                System.out.println("cellFactory");
+
                 return new CellFactoryPlan();
 
             }
 
         });
 
-        listPlans.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Integer>() {
-            @Override
-            public void changed(ObservableValue<? extends Integer> observableValue, Integer integer, Integer t1) {
-                globalKey = t1;
-            }
-        });
+//        listPlans.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Integer>() {
+//            @Override
+//            public void changed(ObservableValue<? extends Integer> observableValue, Integer integer, Integer t1) {
+//                globalKey = t1;
+//            }
+//        });
         dateMain.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                keysList.clear();
-                keysList.addAll(Plan.plansDayFilter(dateMain.getValue()));
+                dateCurr = dateMain.getValue();
+                updateFilteredKeysList();
             }
         });
     }
-     class CellFactoryPlan extends ListCell<Integer> {
 
+
+     class CellFactoryPlan extends ListCell<Integer> {
         @Override
         protected void updateItem(Integer integer, boolean b) {
             super.updateItem(integer, b);
-            System.out.println(integer + " " + b) ;
+
             if (integer == null || b) {
-                System.out.println("CellIsEmpty");
+
             }else {
                 setText(Plan.toPlan(integer).getHead());
 
@@ -119,4 +139,6 @@ private static LocalDate dateCurr;
 
 
     }
+
+
 }

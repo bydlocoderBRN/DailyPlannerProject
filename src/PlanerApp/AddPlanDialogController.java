@@ -121,7 +121,8 @@ public class AddPlanDialogController extends Pane implements Initializable {
                 }
                 String head = txtHead.getText();
                 String body = txtHead.getText();
-                ControllerClass.hBoxAddPlan(startTime,finishTime,head,body);
+                Plan.newPlan(head,body,startTime,finishTime);
+                ControllerClass.updateFilteredKeysList();
                 s.close();
                 System.out.println(Plan.plans);
 
