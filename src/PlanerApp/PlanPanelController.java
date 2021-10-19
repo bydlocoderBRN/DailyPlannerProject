@@ -1,10 +1,13 @@
 package PlanerApp;
 
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 
 import java.io.IOException;
@@ -23,11 +26,14 @@ public class PlanPanelController extends GridPane implements Initializable {
     TextField txtMinutesFinish;
     @FXML
     TextField txtHoursFinish;
+    @FXML
+    GridPane grid;
     private int key;
     LocalDateTime startPlanTime;
     LocalDateTime finishPlanTime;
     String head;
     String body;
+    int clickCounter = 0;
     PlanPanelController(){
         FXMLLoader loader =new FXMLLoader(getClass().getResource("PlanPanel.fxml"));
         loader.setRoot(this);
@@ -69,6 +75,17 @@ public class PlanPanelController extends GridPane implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
+            grid.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                @Override
+                public void handle(MouseEvent mouseEvent) {
+                    if (mouseEvent.getButton().equals(MouseButton.PRIMARY)){
+                        if(mouseEvent.getClickCount() == 2){
+                            ControllerClass.lblGlobalKey.setText(Integer.toString(key));
+                        }
+                    }
+
+                }
+            });
 //        txtHoursStart.setText(Integer.toString(startPlanTime.getHour()));
 //        txtMinutesStart.setText(Integer.toString(startPlanTime.getMinute()));
 //        txtHoursFinish.setText(Integer.toString(finishPlanTime.getHour()));

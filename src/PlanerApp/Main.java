@@ -79,13 +79,11 @@ public class Main extends Application {
        PlanPanelController plan1 = new PlanPanelController();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MainUI.fxml"));
         root = (Pane) loader.load();
-
         root.getChildren().add(timeLine1);
         Scene sceneTest = new Scene(root);
         stage.setScene(sceneTest);
         stage.setTitle("DailyPlanner");
         stage.setWidth(1280);
-        stage.setHeight(800);
         stage.show();
         Plan.trayNote();
         timerAlarm.start();
@@ -94,7 +92,6 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) throws Exception{
-
         Application.launch(args);
 
 

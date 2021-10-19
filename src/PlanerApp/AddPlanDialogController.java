@@ -72,7 +72,8 @@ public class AddPlanDialogController extends Pane implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         s.setScene(new Scene(this));
-
+        dateStart.setValue(LocalDate.now());
+        dateFinish.setValue(LocalDate.now());
         checkTimeNow.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
@@ -120,7 +121,7 @@ public class AddPlanDialogController extends Pane implements Initializable {
                     }
                 }
                 String head = txtHead.getText();
-                String body = txtHead.getText();
+                String body = txtContent.getText();
                 Plan.newPlan(head,body,startTime,finishTime);
                 ControllerClass.updateFilteredKeysList();
                 s.close();

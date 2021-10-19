@@ -7,6 +7,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.*;
 import java.awt.TrayIcon.MessageType;
+import java.util.regex.Pattern;
 
 
 public class Plan {
@@ -15,7 +16,7 @@ private LocalDateTime finishTime;
 private String head;
 private String content;
 private int hashNote;
-private int notificationCount=0;
+private static int notificationCount=0;
 private static int globalHashNote=0;
 private static ExecutorService pool = Executors.newSingleThreadExecutor();
 private static boolean isPoolLaunched = false;
@@ -72,6 +73,9 @@ public static    TrayIcon trayIcon;
         startTime = start;
         finishTime = finish;
         head = hed;
+        if (head == ""){
+            head = "Plan" + hashNote;
+        }
         content =body;
         if (isPoolLaunched == false){
             pool.execute(noteDetector);
@@ -241,12 +245,12 @@ public static    TrayIcon trayIcon;
 //1-note 2-alarm
     public static TreeMap<String, LocalDateTime> getAllNotifications () { return notifications; }
     //EDITED FOR TREEMAP
-
+    public static LocalDateTime getNotification(String noteKey){return notifications.get(noteKey);}
     //Структура ключа для оповещений <порядковый_номер.тип.ключ_плана> пример: 15001002
     public void addNotification(LocalDateTime note){
         notificationCount+=1;
         String key = notificationCount + "." + "1" + "." + hashNote;
-        if (note.isBefore(LocalDateTime.now())){
+        if (!note.isBefore(LocalDateTime.now())){
             notifications.put(key,note);}
         else {System.out.println("Выбранное время уже прошло");}
     }
@@ -254,71 +258,82 @@ public static    TrayIcon trayIcon;
     public void addAlarm(LocalDateTime alarm) {
         notificationCount+=1;
         String key = notificationCount + "." + "2" + "." + hashNote;
-        if (alarm.isBefore(LocalDateTime.now())){
+        if (!alarm.isBefore(LocalDateTime.now())){
             notifications.put(key, alarm);}
         else {System.out.println("Выбранное время уже прошло");}
     }
 //EDITED FOR TREEMAP
 
     public static int getNotificationCount(String noteKey){
-        return Integer.parseInt(noteKey.split(".")[0]);
+        return Integer.parseInt(noteKey.split("\\.")[0]);
 
     }
     public static int getNotificationType(String noteKey){
-        return Integer.parseInt(noteKey.split(".")[1]);
+        return Integer.parseInt(noteKey.split("\\.")[1]);
 
     }
 
     public static int getNotificationPLanKey(String noteKey){
-        return Integer.parseInt(noteKey.split(".")[2]);
+        return Integer.parseInt(noteKey.split("\\.")[2]);
 
     }
     public static Runnable noteDetector = new Runnable() {
         @Override
         public void run() {
+            System.out.println("PoolExecuted");
             isNotificationEmpty();
             startNote();
         }
     };
+    public static boolean isEmpty(){return notifications.isEmpty();}
+    private static void isNotificationEmpty () {
+        boolean emptyNote= notifications.isEmpty();
+        System.out.println("IsNoteEmtyStarted");
+        while(emptyNote){
+            emptyNote = notifications.isEmpty();
+            try {
+                Thread.sleep(1);
+            }catch (InterruptedException e){}
 
+        }
+        System.out.println("EmptyIsOver");
+        isNotificationNow();
+    }
     private static void isNotificationNow () {
+        System.out.println("isNoteNowStarted");
         boolean itis = notifications.get(notifications.firstKey()).withNano(0).equals(LocalDateTime.now().withNano(0));
         while (itis != true){
             itis = notifications.get(notifications.firstKey()).withNano(0).equals(LocalDateTime.now().withNano(0));
-
+            try {
+                Thread.sleep(1);
+            }catch (InterruptedException e){}
         }
     }
     //EDITED FOR TREEMAP
-
-    private static void isNotificationEmpty ()
-    { boolean emptyNote= notifications.isEmpty();
-        while(emptyNote){
-            emptyNote = notifications.isEmpty();
-        }
-
-        isNotificationNow();
-    }
-
 
     private static String wichNotificationNow(){
         int hash = Plan.getNotificationPLanKey(notifications.firstKey());
         return plans.get(hash).getHead();
     }
     public static void startNote(){
-        if(notifications.get(notifications.firstKey()).getNano()%10 ==1 ){
+        System.out.println("startNoteHere");
+        if((getNotificationType(notifications.firstKey())) == 1){
+
             System.out.println("Notification!!" + wichNotificationNow());
             trayIcon.displayMessage("Notify!",wichNotificationNow(), MessageType.INFO);
             notifications.remove(notifications.firstKey());
+            ControllerClass.updateFilteredNoteList();
             pool.execute(noteDetector);
-            ;}
-        else if(notifications.get(notifications.firstKey()).getNano()%10 ==2 ){
+
+            }
+        else if((getNotificationType(notifications.firstKey())) == 2){
             System.out.println("Alarm!!!" + wichNotificationNow());
             Main.isAlertNow=true;
             Main.alertHeader=wichNotificationNow();
             notifications.remove(notifications.firstKey());
-
+            ControllerClass.updateFilteredNoteList();
             pool.execute(noteDetector);
-            ;
+
         }
 
 
@@ -335,7 +350,19 @@ public static    TrayIcon trayIcon;
                 tray.add(trayIcon);
 
             }
-            catch (Exception err){System.err.println(err);}}
+            catch (Exception err){System.err.println(err); }}
+    }
+
+
+
+    public static ArrayList<String> filterNotes(int planKey){
+        ArrayList<String> notes = new ArrayList<String>();
+        for(String noteKey : notifications.keySet()){
+            if(getNotificationPLanKey(noteKey)==planKey){
+                notes.add(noteKey);
+            }
+        }
+        return notes;
     }
 //==============================================================================================================================================================================================================================\
     //\Notifications\

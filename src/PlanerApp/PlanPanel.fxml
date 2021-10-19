@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<fx:root maxHeight="400.0" maxWidth="100.0" prefHeight="400.0" prefWidth="100.0" style="-fx-background-color: green;" type="javafx.scene.layout.GridPane" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1">
+<fx:root fx:id="grid" maxHeight="400.0" maxWidth="100.0" prefHeight="400.0" prefWidth="100.0" style="-fx-background-color: green;" type="javafx.scene.layout.GridPane" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1">
   <columnConstraints>
     <ColumnConstraints hgrow="SOMETIMES" maxWidth="76.0" minWidth="0.0" prefWidth="49.0" />
       <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="10.0" prefWidth="51.0" />
