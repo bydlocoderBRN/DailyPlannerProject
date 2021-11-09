@@ -1,13 +1,17 @@
 package PlanerApp;
 
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.*;
 import java.awt.TrayIcon.MessageType;
-import java.util.regex.Pattern;
+
 
 
 public class Plan {
@@ -15,21 +19,23 @@ private LocalDateTime startTime;
 private LocalDateTime finishTime;
 private String head;
 private String content;
-private int hashNote;
-private static int notificationCount=0;
-private static int globalHashNote=0;
+private int planKey;
+private static int notificationCount=0; //Save
+private static int globalPlanKey=0; //Save
 private static ExecutorService pool = Executors.newSingleThreadExecutor();
-private static boolean isPoolLaunched = false;
-private static TreeMap<String,LocalDateTime> notifications = new TreeMap<String,LocalDateTime>();
-public static HashMap<Integer,Plan> plans = new HashMap<Integer, Plan>();
+private static TreeMap<String,LocalDateTime> notifications = new TreeMap<String,LocalDateTime>(new ComparatorForNotes()); //Save
+public static HashMap<Integer,Plan> plans = new HashMap<Integer, Plan>(); //Save
 public static    SystemTray tray;
 public static    Image planerIcon;
 public static    TrayIcon trayIcon;
 
 
-
-
-
+private static class ComparatorForNotes implements Comparator<String>{
+    @Override
+    public int compare(String o1, String o2) {
+             return (int)(Long.decode(o1.split("\\.")[3]) - Long.decode(o2.split("\\.")[3]));
+    }
+}
 
 //==============================================================================================================================================================================================================================\
     //Plan
@@ -43,50 +49,32 @@ public static    TrayIcon trayIcon;
 
 
     Plan(){
-    hashNote = globalHashNote;
+    planKey = globalPlanKey;
     startTime = LocalDateTime.of(1970,1,1,0,0,0);
     finishTime = LocalDateTime.of(1970,1,1,0,0,1);
     head = "";
     content ="";
-    if (isPoolLaunched == false){
-        pool.execute(noteDetector);
-        isPoolLaunched = true;
 
-
-    }
 
 
 };
-    Plan(String hed){
-        hashNote = globalHashNote;
-        startTime = LocalDateTime.of(1970,1,1,0,0,0);
-        finishTime = LocalDateTime.of(1970,1,1,0,0,1);
-        head = hed;
-        content ="";
-        if (isPoolLaunched == false){
-            pool.execute(noteDetector);
-            isPoolLaunched = true;
-        }
-    };
+
     Plan( String hed, String body, LocalDateTime start, LocalDateTime finish){
-        hashNote = globalHashNote;
+        planKey = globalPlanKey;
         startTime = start;
         finishTime = finish;
         head = hed;
-        if (head == ""){
-            head = "Plan" + hashNote;
+        if (head.equals("")){
+            head = "Plan" + planKey;
         }
         content =body;
-        if (isPoolLaunched == false){
-            pool.execute(noteDetector);
-            isPoolLaunched = true;
+        if(content.equals("")){
+            content = "Don't forget about " + head;
         }
+        putToNotifications(notificationCount + "." + "3" + "." + planKey + "." + finishTime.toEpochSecond(ZoneOffset.UTC), finishTime.withNano(0));
+
     }
-    public static int newPlan(String hed){
-        int hash = getHash();
-        plans.put(hash,new Plan(hed));
-        return hash;
-    }
+
     public static int newPlan(String hed, String body, LocalDateTime start, LocalDateTime finish){
         int hash = getHash();
         plans.put(hash,new Plan(hed, body, start, finish));
@@ -97,8 +85,8 @@ public static    TrayIcon trayIcon;
     }
 
     private static int getHash(){
-        globalHashNote+=1;
-        return globalHashNote;
+        globalPlanKey+=1;
+        return globalPlanKey;
     };
 
     public  void separatePlan(long year, long month, long day, long hour, long minute, long second){
@@ -234,6 +222,34 @@ public static    TrayIcon trayIcon;
         return keys;
     }
 
+
+    public String toStringSave(){
+        return this.planKey +";@&;@&;@&;@&;@&;@&;@&;"+this.head + ";@&;@&;@&;@&;@&;@&;@&;" + this.getStartTime() + ";@&;@&;@&;@&;@&;@&;@&;" + this.getFinishTime() + ";@&;@&;@&;@&;@&;@&;@&;" + this.content;
+    }
+    public static void deletePlan(int key){
+        for (String keyNote: filterNotes(key)){
+            deleteNote(keyNote);
+        }
+        plans.remove(key);
+        Main.updateLists();
+    }
+
+    public static void deleteOldData(){
+        ArrayList<Integer> k = new ArrayList<Integer>();
+        k.addAll(plans.keySet());
+        for(int i:k) {
+            if(Plan.toPlan(i).getFinishTime().isBefore(LocalDateTime.now().plusMinutes(1))){
+                deletePlan(i);
+            }
+        }
+        ArrayList<String> k1 = new ArrayList<String>();
+        k1.addAll(notifications.keySet());
+        for(String key:k1){
+            if(notifications.get(key).isBefore(LocalDateTime.now().plusMinutes(1))){
+                deleteNote(key);
+            }
+        }
+    }
 //==============================================================================================================================================================================================================================\
     //\Plan\
 //==============================================================================================================================================================================================================================\
@@ -246,24 +262,34 @@ public static    TrayIcon trayIcon;
     public static TreeMap<String, LocalDateTime> getAllNotifications () { return notifications; }
     //EDITED FOR TREEMAP
     public static LocalDateTime getNotification(String noteKey){return notifications.get(noteKey);}
-    //Структура ключа для оповещений <порядковый_номер.тип.ключ_плана> пример: 15001002
+    //Структура ключа для оповещений <порядковый_номер.тип.ключ_плана> пример: 15.1.2
     public void addNotification(LocalDateTime note){
         notificationCount+=1;
-        String key = notificationCount + "." + "1" + "." + hashNote;
-        if (!note.isBefore(LocalDateTime.now())){
-            notifications.put(key,note);}
+        String key = notificationCount + "." + "1" + "." + planKey+"."+note.toEpochSecond(ZoneOffset.UTC);
+        if (!note.isBefore(LocalDateTime.now().plusSeconds(2))){
+            putToNotifications(key,getDifferentTime(note));}
         else {System.out.println("Выбранное время уже прошло");}
+        System.out.println("Первое оповещение " + notifications.get(notifications.firstKey())  + "::"+notifications .firstKey()+ " Последнее " + notifications.get(notifications.lastKey()));
     }
     //EDITED FOR TREEMAP
     public void addAlarm(LocalDateTime alarm) {
         notificationCount+=1;
-        String key = notificationCount + "." + "2" + "." + hashNote;
-        if (!alarm.isBefore(LocalDateTime.now())){
-            notifications.put(key, alarm);}
+        String key = notificationCount + "." + "2" + "." + planKey + "." + alarm.toEpochSecond(ZoneOffset.UTC);
+        if (!alarm.isBefore(LocalDateTime.now().plusSeconds(2))){
+            putToNotifications(key, getDifferentTime(alarm));}
         else {System.out.println("Выбранное время уже прошло");}
     }
 //EDITED FOR TREEMAP
 
+    private static LocalDateTime getDifferentTime(LocalDateTime note){
+        note = note.withNano(0);
+        boolean haveSame = notifications.containsValue(note);
+        while(haveSame){
+            note = note.plusSeconds(1);
+            haveSame =  notifications.containsValue(note);
+        }
+        return note;
+    }
     public static int getNotificationCount(String noteKey){
         return Integer.parseInt(noteKey.split("\\.")[0]);
 
@@ -285,7 +311,10 @@ public static    TrayIcon trayIcon;
             startNote();
         }
     };
-    public static boolean isEmpty(){return notifications.isEmpty();}
+    public static void closePool(){
+        pool.shutdown();
+
+    }
     private static void isNotificationEmpty () {
         boolean emptyNote= notifications.isEmpty();
         System.out.println("IsNoteEmtyStarted");
@@ -317,23 +346,29 @@ public static    TrayIcon trayIcon;
     }
     public static void startNote(){
         System.out.println("startNoteHere");
+        System.out.println(notifications.firstKey());
         if((getNotificationType(notifications.firstKey())) == 1){
 
             System.out.println("Notification!!" + wichNotificationNow());
             trayIcon.displayMessage("Notify!",wichNotificationNow(), MessageType.INFO);
-            notifications.remove(notifications.firstKey());
-            ControllerClass.updateFilteredNoteList();
+            removeFromNotifications(notifications.firstKey());
+            Main.updateLists();
+//            ControllerClass.updateFilteredNoteList();
             pool.execute(noteDetector);
 
             }
         else if((getNotificationType(notifications.firstKey())) == 2){
             System.out.println("Alarm!!!" + wichNotificationNow());
-            Main.isAlertNow=true;
+            Main.alert();
             Main.alertHeader=wichNotificationNow();
-            notifications.remove(notifications.firstKey());
-            ControllerClass.updateFilteredNoteList();
+            removeFromNotifications(notifications.firstKey());
+            Main.updateLists();
+//            ControllerClass.updateFilteredNoteList();
             pool.execute(noteDetector);
 
+        }else if((getNotificationType(notifications.firstKey())) == 3){
+            deletePlan(getNotificationPLanKey(notifications.firstKey()));
+            Main.updateLists();
         }
 
 
@@ -343,7 +378,7 @@ public static    TrayIcon trayIcon;
             try {
 
                 tray = SystemTray.getSystemTray();
-                planerIcon = Toolkit.getDefaultToolkit().getImage("trayIcon.gif");
+                planerIcon = Toolkit.getDefaultToolkit().getImage("trayIcon.png");
                 trayIcon = new TrayIcon(planerIcon, "your Daily Planer");
                 trayIcon.setImageAutoSize(true);
                 trayIcon.setToolTip("A daily planer notification");
@@ -358,17 +393,211 @@ public static    TrayIcon trayIcon;
     public static ArrayList<String> filterNotes(int planKey){
         ArrayList<String> notes = new ArrayList<String>();
         for(String noteKey : notifications.keySet()){
-            if(getNotificationPLanKey(noteKey)==planKey){
+            if(getNotificationPLanKey(noteKey)==planKey && getNotificationPLanKey(noteKey)!=3){
                 notes.add(noteKey);
             }
         }
         return notes;
     }
+
+    public static void launchPoolNotes(){
+
+        pool.execute(noteDetector);}
+    public static void deleteNote(String key){
+        removeFromNotifications(key);
+        Main.updateLists();
+    }
+
+    private static Path directory = Path.of("C:\\PlanerApp");
+    private static Path saveDirectory = Path.of(directory + "\\data");
+    private static Path savePlanFile = Path.of(saveDirectory + "\\planData.txt");
+    private static Path saveNotesFile = Path.of(saveDirectory+ "\\notificationsData.txt");
+    private static String planSaveData = new String();
+
+    private static String notesData = new String();
+    private static ArrayList<String> keys= new ArrayList<String>();
+
+    private static Path saveGlobalPropertiesFile = Path.of(saveDirectory + "\\GlobalPropertiesData.txt");
+
+
+
+    private static LocalDateTime plugNote = LocalDateTime.of(2100,1,1,0,0,0);
+    private static String plugKey = "0.3.0.0";
+    private static void removeFromNotifications(String key){
+        if(notifications.size()==1 && notifications.containsKey(key)){
+            notifications.put(plugKey,plugNote);
+            notifications.remove(key);
+        }else {notifications.remove(key);}
+    }
+    private static void putToNotifications(String key, LocalDateTime value){
+        if(notifications.size()==1 && notifications.containsKey(plugKey)){
+            notifications.put(key,value);
+            notifications.remove(plugKey);
+        }else{notifications.put(key,value);}
+    }
 //==============================================================================================================================================================================================================================\
     //\Notifications\
 //==============================================================================================================================================================================================================================\
+//==============================================================================================================================================================================================================================\
+    //\Save/Load\
+//==============================================================================================================================================================================================================================\
+private static void savePlans(){
+    ArrayList<Integer> keys = new ArrayList<Integer>();
+    if(!plans.isEmpty()) {
+        keys.addAll(plans.keySet());
+        for (int key : keys) {
+            planSaveData += Plan.toPlan(key).toStringSave() + "\n";
+
+        }
+    }
+    if(!Files.exists(directory)){
+        try{
+            Files.createDirectory(directory);}
+        catch (IOException e){System.out.println("Cant create directory" +e);}
+    }
+    if(!Files.exists(saveDirectory)){
+        try{
+            Files.createDirectory(saveDirectory);}
+        catch (IOException e){System.out.println("Cant create directory" +e);}
+    }
+    if(!Files.exists(savePlanFile)){
+        try{
+            Files.createFile(savePlanFile);}
+        catch (IOException e){System.out.println("Cant create file" +e);}
+    }
+
+    try{
+        Files.writeString(savePlanFile, "");}
+    catch (IOException e){System.out.println("Cant write" +e);}
+    try{
+        Files.writeString(savePlanFile, planSaveData);}
+    catch (IOException e){System.out.println("Cant write" +e);}
+}
+    static String[] planFromData = new String[5];
 
 
+    private static void loadPlan(){
+        ArrayList<String> data = new ArrayList<String>();
+        if(Files.exists(savePlanFile)){
+            try{
+                data.addAll(Files.readAllLines(savePlanFile));}
+            catch (IOException e){System.out.println("Cant read" +e);}
+
+            if(!data.isEmpty()){
+                for (int i = 0; i<data.size();i++){
+                    if(!data.get(i).equals("")){
+                        planFromData = data.get(i).split(";@&;@&;@&;@&;@&;@&;@&;");
+                        Plan p = new Plan();
+                        p.planKey = Integer.parseInt(planFromData[0]);
+                        p.head = planFromData[1];
+                        p.startTime = LocalDateTime.parse(planFromData[2]);
+                        p.finishTime = LocalDateTime.parse(planFromData[3]);
+                        p.content = planFromData[4];
+                        plans.put(Integer.parseInt(planFromData[0]), p);
+                    }
+                }
+            }
+        }
+    }
+    private static void saveNotes(){
+        if(!notifications.isEmpty()) {
+            keys.addAll(notifications.keySet());
+            for (String key : keys) {
+                notesData += key + ";==;" + notifications.get(key) + "\n";
+            }
+        }
+        if(!Files.exists(directory)){
+            try{
+                Files.createDirectory(directory);}
+            catch (IOException e){System.out.println("Cant create directory" +e);}
+        }
+        if(!Files.exists(saveDirectory)){
+            try{
+                Files.createDirectory(saveDirectory);}
+            catch (IOException e){System.out.println("Cant create directory" +e);}
+        }
+        if(!Files.exists(saveNotesFile)){
+            try{
+                Files.createFile(saveNotesFile);}
+            catch (IOException e){System.out.println("Cant create file" +e);}
+        }
+
+        try{
+            Files.writeString(saveNotesFile, "");}
+        catch (IOException e){System.out.println("Cant write" +e);}
+        try{
+            Files.writeString(saveNotesFile, notesData);}
+        catch (IOException e){System.out.println("Cant write" +e);}
+
+    }
+    private static void loadNotes() {
+        ArrayList<String> data = new ArrayList<String>();
+        if (Files.exists(saveNotesFile)) {
+            try {
+                data.addAll(Files.readAllLines(saveNotesFile));
+            } catch (IOException e) {
+                System.out.println("Cant read" + e);
+            }
+        }
+        if(!data.isEmpty()){
+            for (int i = 0; i<data.size();i++){
+                if(!data.get(i).equals("")){
+                    putToNotifications(data.get(i).split(";==;")[0], LocalDateTime.parse(data.get(i).split(";==;")[1]));
+                }
+            }
+        }
+    }
+    private static void saveGlobalProperties(){
+        if(!Files.exists(directory)){
+            try{
+                Files.createDirectory(directory);}
+            catch (IOException e){System.out.println("Cant create directory" +e);}
+        }
+        if(!Files.exists(saveDirectory)){
+            try{
+                Files.createDirectory(saveDirectory);}
+            catch (IOException e){System.out.println("Cant create directory" +e);}
+        }
+        if(!Files.exists(saveGlobalPropertiesFile)){
+            try{
+                Files.createFile(saveGlobalPropertiesFile);}
+            catch (IOException e){System.out.println("Cant create file" +e);}
+        }
+        try{
+            Files.writeString(saveGlobalPropertiesFile, "");}
+        catch (IOException e){System.out.println("Cant write" +e);}
+        try{
+            Files.writeString(saveGlobalPropertiesFile, String.valueOf(globalPlanKey)+ ";;"+String.valueOf(notificationCount));}
+        catch (IOException e){System.out.println("Cant write" +e);}
+    }
+    private static void loadGlobalProperties() {
+        ArrayList<String> data = new ArrayList<String>();
+        if (Files.exists(saveGlobalPropertiesFile)) {
+            try {
+                data.addAll(Files.readAllLines(saveGlobalPropertiesFile));
+            } catch (IOException e) {
+                System.out.println("Cant read" + e);
+            }
+        }
+        if(!data.isEmpty()){
+            for (int i = 0; i<data.size();i++){
+                if(!data.get(i).equals("")){
+                    globalPlanKey = Integer.parseInt(data.get(i).split(";;")[0]);
+                    notificationCount = Integer.parseInt(data.get(i).split(";;")[1]);
+                }
+            }
+        }
+    }
+    public static void save(){
+        savePlans();
+        saveNotes();
+        saveGlobalProperties();
+    }
+    public static void load(){
+        loadPlan();
+        loadNotes();
+        loadGlobalProperties();
+    }
 //==============================================================================================================================================================================================================================\
     //Comments
 //==============================================================================================================================================================================================================================\

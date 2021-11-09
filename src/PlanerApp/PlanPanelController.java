@@ -72,10 +72,28 @@ public class PlanPanelController extends GridPane implements Initializable {
     public void setFinishPlanTime(LocalDateTime f){finishPlanTime=f;
         txtHoursFinish.setText(Integer.toString(finishPlanTime.getHour()));
         txtMinutesFinish.setText(Integer.toString(finishPlanTime.getMinute()));}
+
+    public void setSizeAndLocation(int height, int layoutX, int layoutY){
+        this.setMaxHeight(height);
+        this.setPrefHeight(height);
+        this.setMinHeight(height);
+        this.setLayoutX(layoutX);
+        this.setLayoutY(layoutY);
+
+    }
+    public void isTop(){
+        this.txtHoursStart.setVisible(false);
+        this.txtMinutesStart.setVisible(false);
+    };
+    public void isBottom(){
+        this.txtHoursFinish.setVisible(false);
+        this.txtMinutesFinish.setVisible(false);
+    };
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-            grid.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            this.setOnMouseClicked(new EventHandler<MouseEvent>() {
                 @Override
                 public void handle(MouseEvent mouseEvent) {
                     if (mouseEvent.getButton().equals(MouseButton.PRIMARY)){
@@ -86,6 +104,9 @@ public class PlanPanelController extends GridPane implements Initializable {
 
                 }
             });
+
+
+        }
 //        txtHoursStart.setText(Integer.toString(startPlanTime.getHour()));
 //        txtMinutesStart.setText(Integer.toString(startPlanTime.getMinute()));
 //        txtHoursFinish.setText(Integer.toString(finishPlanTime.getHour()));
@@ -93,4 +114,4 @@ public class PlanPanelController extends GridPane implements Initializable {
 //        txtHead.setText(head);
 
     }
-}
+

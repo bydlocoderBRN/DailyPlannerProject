@@ -3,6 +3,7 @@ package PlanerApp;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -10,6 +11,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListCell;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 
 import java.io.File;
@@ -17,6 +19,7 @@ import java.io.File;
 import java.lang.management.PlatformManagedObject;
 import java.time.LocalDateTime;
 import java.util.Optional;
+
 
 
 public class Main extends Application {
@@ -29,13 +32,28 @@ public class Main extends Application {
 //    private static Alert alertAlarm = new Alert(Alert.AlertType.CONFIRMATION);
     private static File alarmSound = new File("D://Coding//Java//DailyPlanner//src//PlanerApp//Alarm.wav");
     private static Sound alarm = new Sound(alarmSound);
-    public static boolean isAlertNow=false;
+    private static boolean isAlertNow=false;
+    private static boolean isUpdateListsNow=false;
     public static String alertHeader;
     public static int globalKey;
+    public static void alert(){
+        isAlertNow = true;
+    }
+    public static void updateLists(){
+        isUpdateListsNow=true;
+    }
+    public static void resetUpdateLists(){
+        isUpdateListsNow=false;
+    }
     static AnimationTimer timerAlarm = new AnimationTimer() {
         @Override
         public void handle(long l) {
-
+            if(isUpdateListsNow){
+                Platform.runLater(()->{
+                    ControllerClass.updateFilteredKeysList();
+                    ControllerClass.updateFilteredNoteList();
+                });
+            }
             if(isAlertNow){
 
                 Platform.runLater(() -> {
@@ -76,17 +94,32 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws Exception {
        TimeLineController timeLine1 = new TimeLineController();
-       PlanPanelController plan1 = new PlanPanelController();
+       timeLine1.setPrefHeight(800);
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MainUI.fxml"));
         root = (Pane) loader.load();
         root.getChildren().add(timeLine1);
         Scene sceneTest = new Scene(root);
         stage.setScene(sceneTest);
         stage.setTitle("DailyPlanner");
-        stage.setWidth(1280);
+        stage.setResizable(false);
         stage.show();
-        Plan.trayNote();
         timerAlarm.start();
+        Plan.load();
+        Plan.launchPoolNotes();
+        Plan.deleteOldData();
+        Plan.trayNote();
+
+        ControllerClass.updateFilteredKeysList();
+        ControllerClass.updateFilteredNoteList();
+        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent windowEvent) {
+                Plan.save();
+                Plan.closePool();
+                Platform.exit();
+                System.exit(0);
+            }
+        });
 //        int key = Plan.newPlan("Bday", "Grannys birthday", LocalDateTime.of(2021, 1, 1, 0, 0, 0), LocalDateTime.of(2031, 1, 1, 0, 0, 0));
 //        System.out.println(Plan.plans.keySet());
     }

@@ -27,7 +27,8 @@ public class TimeLineController extends HBox implements Initializable {
     Slider sliderTime;
 @FXML
     Label lblTime;
-
+@FXML
+    HBox mainPane;
     public TimeLineController(){
         FXMLLoader loader = new FXMLLoader(getClass().getResource("TimeLinePanel.fxml"));
         loader.setRoot(this);
@@ -42,6 +43,13 @@ public class TimeLineController extends HBox implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        mainPane.setMaxHeight(800);
+        paneSlider.setMaxHeight(800);
+        paneSlider.setMaxWidth(100);
+        paneSlider.setPrefWidth(100);
+        sliderTime.setMaxHeight(800);
+        sliderTime.setPrefHeight(800);
+        paneTxt.setMaxHeight(800);
         paneSlider.setOnMouseMoved(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {

@@ -10,8 +10,8 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="PlanerApp.ControllerClass">
@@ -19,14 +19,9 @@
       <DatePicker fx:id="dateMain" layoutX="1006.0" layoutY="38.0" prefHeight="27.0" prefWidth="209.0" />
       <ListView fx:id="listPlans" layoutX="642.0" layoutY="38.0" maxHeight="750" prefHeight="300.0" prefWidth="341.0" />
       <Button fx:id="btnAddPlan" layoutX="873.0" layoutY="684.0" mnemonicParsing="false" onAction="#btnClick" prefHeight="71.0" prefWidth="223.0" text="Add Plan" />
-      <Button layoutX="1116.0" layoutY="684.0" mnemonicParsing="false" prefHeight="65.0" prefWidth="106.0" text="Button" />
-      <Separator fx:id="sepRight" layoutX="637.0" layoutY="130.0" orientation="VERTICAL" prefHeight="517.0" prefWidth="0.0" />
-      <Separator fx:id="sepLeft" layoutX="206.0" layoutY="154.0" orientation="VERTICAL" prefHeight="517.0" prefWidth="0.0" />
-      <ScrollPane fx:id="scroll1" layoutX="227.0" layoutY="21.0" prefHeight="758.0" prefWidth="398.0">
-         <content>
-            <HBox fx:id="h1" prefHeight="748.0" prefWidth="380.0" />
-         </content>
-      </ScrollPane>
+      <Separator fx:id="sepRight" layoutX="627.0" layoutY="10.0" orientation="VERTICAL" prefHeight="780.0" prefWidth="6.0" />
+      <Separator fx:id="sepLeft" layoutX="206.0" layoutY="10.0" orientation="VERTICAL" prefHeight="780.0" prefWidth="6.0" />
+      <ScrollPane fx:id="scroll1" layoutX="218.0" layoutY="10.0" prefHeight="780.0" prefWidth="400.0" />
       <AnchorPane fx:id="panePlanInfo" layoutX="643.0" layoutY="347.0" prefHeight="274.0" prefWidth="565.0" style="-fx-background-color: #F0FFFF;">
          <children>
             <Label fx:id="lblStartInfo" layoutX="40.0" layoutY="78.0" text="Label" />
@@ -44,14 +39,23 @@
                   <Button fx:id="btnAdd" layoutX="282.0" layoutY="45.0" mnemonicParsing="false" text="Add" />
                </children>
             </Pane>
-            <Button fx:id="btnAddNotification" layoutX="211.0" layoutY="88.0" mnemonicParsing="false" prefHeight="34.0" prefWidth="106.0" text="Add Notification" />
+            <Button fx:id="btnAddNotification" layoutX="230.0" layoutY="173.0" mnemonicParsing="false" prefHeight="34.0" prefWidth="106.0" text="Add Notification" />
             <Pane layoutX="342.0" layoutY="-1.0" prefHeight="285.0" prefWidth="223.0" style="-fx-background-color: #87CEEB;">
                <children>
                   <ListView fx:id="listNote" prefHeight="249.0" prefWidth="223.0" />
-                  <Button layoutX="69.0" layoutY="249.0" mnemonicParsing="false" prefHeight="34.0" prefWidth="86.0" text="Удалить" />
+                  <Button fx:id="btnDeleteNote" layoutX="69.0" layoutY="249.0" mnemonicParsing="false" prefHeight="34.0" prefWidth="86.0" text="Удалить" />
                </children>
             </Pane>
+            <Button fx:id="btnDeletePlan" layoutX="244.0" layoutY="142.0" mnemonicParsing="false" text="Delete Plan" />
          </children>
       </AnchorPane>
+      <Pane fx:id="paneNoteDrag" layoutX="1100" layoutY="684" prefHeight="50.0" prefWidth="50.0" style="-fx-background-color: BLACK;">
+         <children>
+            <ImageView fx:id="imgNoteDrag" fitHeight="50.0" fitWidth="50.0" layoutX="1.0" pickOnBounds="true" preserveRatio="true" />
+            <TextField fx:id="txtHoursNoteDrag" layoutX="0" layoutY="0" prefHeight="25.0" prefWidth="25.0" visible="false" />
+            <TextField fx:id="txtMinutesNoteDrag" layoutX="25.0" layoutY="0" prefHeight="25.0" prefWidth="25.0" visible="false" />
+            <Button fx:id="btnAddNoteDrag" layoutY="25.0" mnemonicParsing="false" text="add" visible="false" />
+         </children>
+      </Pane>
    </children>
 </AnchorPane>

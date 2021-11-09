@@ -18,8 +18,8 @@
     <RowConstraints maxHeight="76.0" minHeight="10.0" prefHeight="25.0" vgrow="SOMETIMES" />
   </rowConstraints>
    <children>
-      <TextField fx:id="txtMinutesStart" prefHeight="25.0" prefWidth="94.0" style="-fx-background-color: yellow;" GridPane.columnIndex="1" />
-      <TextField fx:id="txtHoursStart" style="-fx-background-color: yellow;" />
+      <TextField fx:id="txtMinutesStart" alignment="TOP_CENTER" prefHeight="25.0" prefWidth="94.0" style="-fx-background-color: yellow;" GridPane.columnIndex="1" />
+      <TextField fx:id="txtHoursStart" alignment="TOP_CENTER" style="-fx-background-color: yellow;" />
       <TextArea fx:id="txtHead" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: yellow;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
       <VBox fx:id="vboxNotifications" prefHeight="200.0" prefWidth="100.0" GridPane.rowIndex="1" />
       <TextField fx:id="txtHoursFinish" style="-fx-background-color: yellow;" GridPane.rowIndex="2" />

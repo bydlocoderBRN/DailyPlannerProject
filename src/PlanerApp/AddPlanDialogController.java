@@ -47,6 +47,24 @@ public class AddPlanDialogController extends Pane implements Initializable {
     CheckBox checkDateTomorrow;
     @FXML
     CheckBox checkTimeNow;
+    @FXML
+    private ToggleButton tglInterval;
+    @FXML
+    private ToggleButton tglCount;
+    @FXML
+    private TextField txtNoteYears;
+    @FXML
+    private TextField txtNoteMonth;
+    @FXML
+    private TextField txtNoteDays;
+    @FXML
+    private TextField txtNoteHours;
+    @FXML
+    private TextField txtNoteMinutes;
+    @FXML
+    private TextField txtNoteSeconds;
+    @FXML
+    private TextField txtNoteCounts;
     private LocalDateTime startTime;
     private LocalDateTime finishTime;
     private Stage s = new Stage();
@@ -122,11 +140,34 @@ public class AddPlanDialogController extends Pane implements Initializable {
                 }
                 String head = txtHead.getText();
                 String body = txtContent.getText();
-                Plan.newPlan(head,body,startTime,finishTime);
+                int key = Plan.newPlan(head,body,startTime,finishTime);
                 ControllerClass.updateFilteredKeysList();
-                s.close();
                 System.out.println(Plan.plans);
+                if(tglInterval.isSelected()){
+                    Plan.toPlan(key).separatePlan((long)Integer.parseInt(txtNoteYears.getText()), (long)Integer.parseInt(txtNoteMonth.getText()), (long)Integer.parseInt(txtNoteDays.getText()), (long)Integer.parseInt(txtNoteHours.getText()), (long)Integer.parseInt(txtNoteMinutes.getText()), (long)Integer.parseInt(txtNoteSeconds.getText()));
+                }
+                if(tglCount.isSelected()){
+                    Plan.toPlan(key).segmentPlan(Integer.parseInt(txtNoteCounts.getText()));
 
+                }
+                s.close();
+
+            }
+        });
+        tglInterval.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(tglInterval.isSelected()){
+                    tglCount.setSelected(false);
+                }
+            }
+        });
+        tglCount.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(tglCount.isSelected()){
+                    tglInterval.setSelected(false);
+                }
             }
         });
             }
