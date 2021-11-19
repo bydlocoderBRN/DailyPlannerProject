@@ -10,15 +10,25 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseDragEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Line;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -28,9 +38,7 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.ResourceBundle;
-import java.util.regex.Pattern;
 
 /*Привязка планов к графическим элементам. При создании плана через newPlan(), возвращается ключ, через который осуществляется доступ
  к плану в HashMap. Надо привязать этот ключ к графическому элементу, и когда фокус или действие будет на этом элементе, в глобальной переменной
@@ -51,7 +59,7 @@ public class ControllerClass implements Initializable {
     @FXML
     public DatePicker dateMain;
     @FXML
-    private ScrollPane scroll1;
+    private ScrollPane scroll;
     @FXML
     private AnchorPane panePlanInfo;
     @FXML
@@ -87,23 +95,24 @@ public class ControllerClass implements Initializable {
     @FXML
     private Button btnDeleteNote;
     private static Pane panePlans;
-    private static ScrollPane scroll;
-    @FXML
-    private ScrollBar scrollBarPlans;
-    @FXML
-    private Pane paneNoteDrag;
+    private static ScrollPane scrollGlobal;
     @FXML
     private ImageView imgNoteDrag;
     @FXML
-    private TextField txtHoursNoteDrag;
+    private Spinner<Integer> spinHoursDrag;
     @FXML
-    private TextField txtMinutesNoteDrag;
+    private Spinner<Integer> spinMinutesDrag;
     @FXML
     private Button btnAddNoteDrag;
-
-
-
-
+    @FXML
+    private AnchorPane mainPane;
+    @FXML
+    private Pane paneDragNoteAddition;
+    @FXML
+    private CheckBox checkAlarmDrag;
+    @FXML
+    private Button btnDragClose;
+    private static AnchorPane mainPaneGlobal;
 //    public static void hBoxAddPlan(LocalDateTime start, LocalDateTime finish, String head, String body){
 ////        PlanPanelController p1 = new PlanPanelController(head, body,start,finish);
 ////        hBoxPlans.getChildren().add(p1);
@@ -125,6 +134,11 @@ public class ControllerClass implements Initializable {
     private void btnClick(){
         planDialog = new AddPlanDialogController();
         planDialog.open();
+        disableScene(true);
+    }
+
+    public static void disableScene(boolean disable){
+        mainPaneGlobal.setDisable(disable);
     }
     public static void updateFilteredKeysList(){
         ObservableList<Integer> oldKeys = FXCollections.observableArrayList(keysList);
@@ -132,23 +146,19 @@ public class ControllerClass implements Initializable {
         keysList.addAll(Plan.plansDayFilter(dateCurr));
         System.out.println("KeysList: " + keysList);
         System.out.println("OldKeys: " + oldKeys);
-//        listPlans.setItems(keysList);
         createPlanPanels(keysList, oldKeys);
-        Main.resetUpdateLists();
     }
 public static void updateFilteredNoteList(){
     noteList.clear();
     noteList.addAll(Plan.filterNotes(globalKey));
-    Main.resetUpdateLists();
-    Main.timerAlarm.start();
 
 }
    private static  int planSpacing = 5;
 private static void calculatePaneSizeAndLocation(PlanPanelController p, int parentHeight){
     LocalDateTime start =p.startPlanTime;
     LocalDateTime finish=p.finishPlanTime;
-        int height;
-        int layoutY;
+        int height=50;
+        int layoutY=0;
         int layoutX = panePlans.getChildren().size()*(int)(p.getPrefWidth()+ planSpacing);
         double minuteInPixel = 1440.0/parentHeight;
         if(start.toLocalDate().equals(dateCurr) && finish.toLocalDate().equals(dateCurr)){
@@ -156,69 +166,124 @@ private static void calculatePaneSizeAndLocation(PlanPanelController p, int pare
             height = (int)(differentStartFinish / minuteInPixel);
             long differentZeroStart = (start.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.of(start.toLocalDate(), LocalTime.of(0,0,0)).toEpochSecond(ZoneOffset.UTC))/60;
             layoutY = (int)(differentZeroStart/minuteInPixel);
-            p.setSizeAndLocation(height,layoutX,layoutY);
+
         }else if(start.toLocalDate().isBefore(dateCurr) && finish.toLocalDate().equals(dateCurr)){
             layoutY = 0;
             long differentZeroFinish = (finish.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.of(dateCurr, LocalTime.of(0,0,0)).toEpochSecond(ZoneOffset.UTC))/60;
             height = (int) (differentZeroFinish/minuteInPixel);
-            p.setSizeAndLocation(height,layoutX,layoutY);
+
             p.isTop();
         }else if(start.toLocalDate().equals(dateCurr) && finish.toLocalDate().isAfter(dateCurr)){
             long differentZeroStart = (start.toEpochSecond(ZoneOffset.UTC) - LocalDateTime.of(start.toLocalDate(), LocalTime.of(0,0,0)).toEpochSecond(ZoneOffset.UTC))/60;
             layoutY = (int)(differentZeroStart/minuteInPixel);
             long diffStartEnd= (LocalDateTime.of(dateCurr, LocalTime.of(23,59,59)).toEpochSecond(ZoneOffset.UTC) - start.toEpochSecond(ZoneOffset.UTC))/60;
             height = (int)(diffStartEnd/minuteInPixel);
-            p.setSizeAndLocation(height,layoutX,layoutY);
+
             p.isBottom();
         }else if(start.toLocalDate().isBefore(dateCurr) && finish.toLocalDate().isAfter(dateCurr)){
             layoutY=0;
             height = parentHeight;
             p.isBottom();
             p.isTop();
-            p.setSizeAndLocation(height,layoutX,layoutY);
+
         }
+        if(height<p.getMinHeight()){
+            height = (int)p.getMinHeight();
+        }
+        if(layoutY + height>parentHeight){
+            layoutY = parentHeight-height;
+        }
+        p.setSizeAndLocation(height,layoutX,layoutY);
+
 }
-    private static ArrayList<Integer> finalKeys = new ArrayList<Integer>();
+    private static GridPane gridPanePlanPanels = new GridPane();
+
     private static void createPlanPanels(ObservableList<Integer> newKeys, ObservableList<Integer> oldKeys) {
-        scroll.setContent(null);
+        scrollGlobal.setContent(null);
         if (newKeys.isEmpty()) {
-            panePlans.getChildren().clear();
-        } else {
-                panePlans.setMinWidth(newKeys.size()*105);
-                panePlans.setPrefWidth(newKeys.size()*105);
-                panePlans.setPrefHeight(780);
-            for (int i =0;i<panePlans.getChildren().size();i++){
-                if(!newKeys.contains(((PlanPanelController)panePlans.getChildren().get(i)).getKey())){
-                    panePlans.getChildren().remove(i);
-                    if(panePlans.getChildren().size()>i) {
-                        for (int i1 = i; i1 < panePlans.getChildren().size(); i1++) {
-                            panePlans.getChildren().get(i1).setLayoutX(panePlans.getChildren().get(i1).getLayoutX() - 105);
+            gridPanePlanPanels.getChildren().clear();
+            gridPanePlanPanels.getColumnConstraints().clear();
+            Main.timeLine1.clearMiniPanels();
+        } else {gridPanePlanPanels.getChildren().clear();
+            gridPanePlanPanels.getColumnConstraints().clear();
+
+//                panePlans.getChildren().clear();
+//                panePlans.setMinWidth(newKeys.size()*105);
+//                panePlans.setPrefWidth(newKeys.size()*105);
+//                panePlans.setPrefHeight(scrollGlobal.getPrefHeight()-15);
+//                panePlans.setLayoutY(0);
+//                panePlans.setLayoutX(0);
+                Main.timeLine1.clearMiniPanels();
+                for (int key: newKeys){
+                        PlanPanelController p1 = new PlanPanelController(key);
+                        calculatePaneSizeAndLocation(p1, (int) gridPanePlanPanels.getPrefHeight());
+                        Pane panePlanPanels = new Pane();
+                        panePlanPanels.setLayoutX(0);
+                        panePlanPanels.setLayoutY(0);
+                        panePlanPanels.setPrefWidth(gridPanePlanPanels.getPrefWidth());
+                        panePlanPanels.setPrefHeight(gridPanePlanPanels.getPrefHeight());
+                        panePlanPanels.getChildren().add(p1);
+
+                        if(!addToExistColumn(p1,gridPanePlanPanels)){gridPanePlanPanels.getColumnConstraints().add(new ColumnConstraints(100));
+                            GridPane.setColumnIndex(panePlanPanels,gridPanePlanPanels.getColumnCount()-1);
+                            gridPanePlanPanels.getChildren().add(panePlanPanels);}
+
+                        Main.timeLine1.addMiniPanel(p1.getLayoutY(), p1.getPrefHeight());
+                }
+//            for (int i =0;i<panePlans.getChildren().size();i++){
+//                if(!newKeys.contains(((PlanPanelController)panePlans.getChildren().get(i)).getKey())){
+//                    panePlans.getChildren().remove(i);
+//                    if(panePlans.getChildren().size()>i) {
+//                        for (int i1 = i; i1 < panePlans.getChildren().size(); i1++) {
+//                            panePlans.getChildren().get(i1).setLayoutX(panePlans.getChildren().get(i1).getLayoutX() - 105);
+//                        }
+//                    }
+//                }
+//            }
+//            if(!panePlans.getChildren().isEmpty()) {
+//                ArrayList<Integer> currentKeys = new ArrayList<Integer>();
+//                for (int i = 0; i < panePlans.getChildren().size(); i++) {
+//                    currentKeys.add(((PlanPanelController) panePlans.getChildren().get(i)).getKey());
+//                }
+//                for (int key : newKeys) {
+//                    if (!currentKeys.contains(key)) {
+//                        PlanPanelController p1 = new PlanPanelController(key);
+//                        calculatePaneSizeAndLocation(p1, (int) scroll.getHeight());
+//                        panePlans.getChildren().add(p1);
+//                    }
+//                }
+//            }else {
+//                for (int key : newKeys) {
+//                        PlanPanelController p1 = new PlanPanelController(key);
+//                        calculatePaneSizeAndLocation(p1, (int) scroll.getHeight());
+//                        panePlans.getChildren().add(p1);
+//                }
+//
+//            }
+        }
+        scrollGlobal.setContent(gridPanePlanPanels);
+    }
+
+    private static boolean addToExistColumn(PlanPanelController planPanel, GridPane grid){
+        int numberOfTrying=0;
+        for(int i=0;i<grid.getColumnCount();i++){
+            for(Node node:grid.getChildren()){
+                if(GridPane.getColumnIndex(node) == i){
+                    numberOfTrying = 0;
+                    for(int k=0; k<((Pane)node).getChildren().size();k++){
+                        if((planPanel.getLayoutY()+ planPanel.getPrefHeight()<((Pane)node).getChildren().get(k).getLayoutY()) || (planPanel.getLayoutY()>((PlanPanelController)((Pane)node).getChildren().get(k)).getPrefHeight()+((Pane)node).getChildren().get(k).getLayoutY())){
+                            numberOfTrying+=1;
                         }
                     }
-                }
-            }
-            if(!panePlans.getChildren().isEmpty()) {
-                ArrayList<Integer> currentKeys = new ArrayList<Integer>();
-                for (int i = 0; i < panePlans.getChildren().size(); i++) {
-                    currentKeys.add(((PlanPanelController) panePlans.getChildren().get(i)).getKey());
-                }
-                for (int key : newKeys) {
-                    if (!currentKeys.contains(key)) {
-                        PlanPanelController p1 = new PlanPanelController(key);
-                        calculatePaneSizeAndLocation(p1, (int) scroll.getHeight());
-                        panePlans.getChildren().add(p1);
+                    if(numberOfTrying == ((Pane)node).getChildren().size()){
+                        ((Pane)node).getChildren().add(planPanel);
+                        return true;
                     }
-                }
-            }else {
-                for (int key : newKeys) {
-                        PlanPanelController p1 = new PlanPanelController(key);
-                        calculatePaneSizeAndLocation(p1, (int) scroll.getHeight());
-                        panePlans.getChildren().add(p1);
-                }
 
+                }
             }
         }
-        scroll.setContent(panePlans);
+        return false;
     }
 //                if (newKeys.size() > oldKeys.size()) {
 //                    finalKeys.addAll(newKeys);
@@ -256,25 +321,44 @@ boolean isNoteDrag = false;
     int startDragPaneY=0;
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        Path imgNote = Path.of("C:\\PlanerApp\\src\\NotificationIcon.png");
+
+        mainPaneGlobal = mainPane;
+        scrollGlobal = scroll;
+        gridPanePlanPanels.setLayoutX(0);
+        gridPanePlanPanels.setLayoutY(0);
+        gridPanePlanPanels.setPrefHeight(scrollGlobal.getPrefHeight()-15);
+        gridPanePlanPanels.setHgap(10);
+        imgNoteDrag.toFront();
+
+        Path imgNote = Path.of("data\\NotificationIcon.png");
         try {
             imgIconDrag = new Image(imgNote.toUri().toURL().toString());
         }catch (MalformedURLException e){System.out.println(e);}
         imgNoteDrag.setImage(imgIconDrag);
         panePlans = new Pane();
-        scroll = scroll1;
-        startDragPaneX = (int)paneNoteDrag.getLayoutX();
-        startDragPaneY = (int)paneNoteDrag.getLayoutY();
+        startDragPaneX = (int)imgNoteDrag.getLayoutX();
+        startDragPaneY = (int)imgNoteDrag.getLayoutY();
+        spinHoursDrag.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0,23));
+        spinMinutesDrag.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59));
         spinH.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0,23));
         spinM.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0,59));
         spinS.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0,59));
+        spinHoursDrag.setOnScroll(setScrollEvent(spinHoursDrag));
+        spinMinutesDrag.setOnScroll(setScrollEvent(spinMinutesDrag));
+        spinH.setOnScroll(setScrollEvent(spinH));
+        spinM.setOnScroll(setScrollEvent(spinM));
+        spinS.setOnScroll(setScrollEvent(spinS));
         lblGlobalKey = new Label("0");
         panePlanInfo.setVisible(false);
         dateMain.setValue(LocalDate.now());
         dateCurr = dateMain.getValue();
+        dateNote.setValue(dateCurr);
         keysList = FXCollections.observableArrayList(Plan.plansDayFilter(dateCurr));
         updateFilteredKeysList();
         listPlans.setItems(keysList);
+//        Line l = new Line(1000,400,1600,800);
+//        l.setStrokeWidth(5);
+//        mainPane.getChildren().add(l);
         listPlans.setCellFactory(new Callback<ListView<Integer>, ListCell<Integer>>() {
             @Override
             public ListCell<Integer> call(ListView<Integer> integerListView) {
@@ -374,84 +458,126 @@ boolean isNoteDrag = false;
                 updateFilteredNoteList();
             }
         });
-        paneNoteDrag.toFront();
-
-        paneNoteDrag.setOnMousePressed(new EventHandler<MouseEvent>() {
+        imgNoteDrag.setOnMouseDragged(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
-                isNoteDrag = true;
-
+                if(mouseEvent.getSceneX()>100 && mouseEvent.getSceneX()<mainPane.getWidth() && mouseEvent.getSceneY()>0 && mouseEvent.getSceneY()<mainPane.getHeight()) {
+                    imgNoteDrag.setLayoutX(mouseEvent.getSceneX());
+                    imgNoteDrag.setLayoutY(mouseEvent.getSceneY());
+                }
             }
         });
-        paneNoteDrag.setOnMouseReleased(new EventHandler<MouseEvent>() {
+
+        imgNoteDrag.setOnMouseReleased(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
-                isNoteDrag = false;
-                for(int i=0; i<panePlans.getChildren().size();i++){
-                    PlanPanelController panel = (PlanPanelController) panePlans.getChildren().get(i);
-                    if(paneNoteDrag.getLayoutX()>=panel.getLayoutX()+scroll1.getLayoutX() && paneNoteDrag.getLayoutX()<=panel.getLayoutX()+panel.getWidth()+scroll1.getLayoutX()){
-                        planPanelDrag = panel;
-                        dragDone = true;
-                        break;
+                dragDone = false;
+                int panelX=0;
+                for(Node node:gridPanePlanPanels.getChildren()){
+                    Pane pane =(Pane)node;
+                    System.out.println(GridPane.getColumnIndex(node));
+                    panelX = (int)(GridPane.getColumnIndex(node)*(pane.getWidth()+gridPanePlanPanels.getHgap()));
+                    for(Node paneNode:pane.getChildren()){
 
-
+                        PlanPanelController panel = (PlanPanelController)paneNode;
+                        System.out.println(panel.getKey()+" panelXY: " +panelX + " " +  panel.getLayoutY()  + " panelHeight: "+panel.getPrefHeight() + " panel width: " + panel.getPrefWidth() + " ImgNoteDragXY: " + imgNoteDrag.getLayoutX() + " " + imgNoteDrag.getLayoutY() +" scrollX: " + scroll.getLayoutX());
+                        if(imgNoteDrag.getLayoutX()>=panelX+scroll.getLayoutX() && imgNoteDrag.getLayoutX()<=panelX+panel.getPrefWidth()+scroll.getLayoutX() && imgNoteDrag.getLayoutY()>=panel.getLayoutY()+scroll.getLayoutY() && imgNoteDrag.getLayoutY()<=panel.getLayoutY()+panel.getPrefHeight()+scroll.getLayoutY()){
+                            planPanelDrag = panel;
+                            dragDone = true;
+                            System.out.println("dragDone");
+                            break;
+                        }else dragDone = false;
                     }
+                    if(dragDone){break;}
 
-               }
+                }
                 if(dragDone){
+                    paneDragNoteAddition.setLayoutX(mouseEvent.getSceneX());
+                    paneDragNoteAddition.setLayoutY(mouseEvent.getSceneY());
                     showInputDrag(true);
+                    imgNoteDrag.setLayoutX(startDragPaneX);
+                    imgNoteDrag.setLayoutY(startDragPaneY);
+
                 }
                 else{
-                    paneNoteDrag.setLayoutX(startDragPaneX);
-                    paneNoteDrag.setLayoutY(startDragPaneY);
+                    imgNoteDrag.setLayoutX(startDragPaneX);
+                    imgNoteDrag.setLayoutY(startDragPaneY);
                 }
+
+//                for(int i=0; i<gridPanePlanPanels.getChildren().size();i++){
+//                    PlanPanelController panel = (PlanPanelController) gridPanePlanPanels.getChildren().get(i);
+//                    if(imgNoteDrag.getLayoutX()>=panel.getLayoutX()+scroll.getLayoutX() && imgNoteDrag.getLayoutX()<=panel.getLayoutX()+panel.getWidth()+scroll.getLayoutX() && imgNoteDrag.getLayoutY()>=panel.getLayoutY()+scroll.getLayoutY() && imgNoteDrag.getLayoutY()<=panel.getLayoutY()+panel.getHeight()+scroll.getLayoutY()){
+//                        planPanelDrag = panel;
+//                        dragDone = true;
+//                        break;
+//                    }else dragDone = false;
+//               }
+//                if(dragDone){
+//                    paneDragNoteAddition.setLayoutX(mouseEvent.getSceneX());
+//                    paneDragNoteAddition.setLayoutY(mouseEvent.getSceneY());
+//                    showInputDrag(true);
+//                    imgNoteDrag.setLayoutX(startDragPaneX);
+//                    imgNoteDrag.setLayoutY(startDragPaneY);
+//                }
+//                else{
+//                    imgNoteDrag.setLayoutX(startDragPaneX);
+//                    imgNoteDrag.setLayoutY(startDragPaneY);
+//                }
 
            }
 
         });
-        paneNoteDrag.setOnMouseMoved(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                if(isNoteDrag){
-                    paneNoteDrag.setLayoutX(mouseEvent.getSceneX());
-                    paneNoteDrag.setLayoutY(mouseEvent.getSceneY());
-                }
-            }
-        });
-        paneNoteDrag.setOnMouseDragged(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                paneNoteDrag.setLayoutX(mouseEvent.getSceneX());
-                paneNoteDrag.setLayoutY(mouseEvent.getSceneY());
-            }
-        });
+
         btnAddNoteDrag.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
-                Plan.toPlan(planPanelDrag.getKey()).addNotification(LocalDateTime.of(dateCurr,LocalTime.of(Integer.parseInt(txtHoursNoteDrag.getText()),Integer.parseInt(txtMinutesNoteDrag.getText()))));
-                paneNoteDrag.setLayoutX(startDragPaneX);
-                paneNoteDrag.setLayoutY(startDragPaneY);
+                LocalDateTime time = LocalDateTime.of(dateCurr,LocalTime.of(spinHoursDrag.getValue(),spinMinutesDrag.getValue()));
+                if(time.isAfter(LocalDateTime.now()) && time.isBefore(planPanelDrag.finishPlanTime) && time.isAfter(planPanelDrag.startPlanTime)) {
+                    if(!checkAlarmDrag.isSelected()) {
+                        Plan.toPlan(planPanelDrag.getKey()).addNotification(time);
+                    }else {Plan.toPlan(planPanelDrag.getKey()).addAlarm(time);}
+                }
+                updateFilteredNoteList();
                 showInputDrag(false);
                 dragDone = false;
+            }
+        });
+        btnDragClose.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                showInputDrag(false);
             }
         });
     }
 
     private void showInputDrag(boolean a){
+
         if(a) {
-            txtHoursNoteDrag.setText("");
-            txtMinutesNoteDrag.setText("");
-            imgNoteDrag.setVisible(false);
-            txtHoursNoteDrag.setVisible(true);
-            txtMinutesNoteDrag.setVisible(true);
-            btnAddNoteDrag.setVisible(true);
+            paneDragNoteAddition.setDisable(false);
+            paneDragNoteAddition.setVisible(true);
         }else{
-            imgNoteDrag.setVisible(true);
-            txtHoursNoteDrag.setVisible(false);
-            txtMinutesNoteDrag.setVisible(false);
-            btnAddNoteDrag.setVisible(false);
+            paneDragNoteAddition.setDisable(true);
+            paneDragNoteAddition.setVisible(false);
+            planPanelDrag=null;
+            checkAlarmDrag.setSelected(false);
+            spinHoursDrag.getValueFactory().setValue(0);
+            spinMinutesDrag.getValueFactory().setValue(0);
         }
     }
+
+private EventHandler<ScrollEvent> setScrollEvent(Spinner spinner) {
+    EventHandler<ScrollEvent> spinScrollEvent = new EventHandler<ScrollEvent>() {
+        @Override
+        public void handle(ScrollEvent scrollEvent) {
+            if (scrollEvent.getDeltaY() > 0) {
+                spinner.increment();
+            } else {
+                spinner.decrement();
+            }
+        }
+    };
+    return  spinScrollEvent;
+}
      class CellFactoryPlan extends ListCell<Integer> {
         @Override
         protected void updateItem(Integer integer, boolean b) {
@@ -459,7 +585,6 @@ boolean isNoteDrag = false;
 
             if (integer != null) {
                 setText(Plan.toPlan(integer).getHead());
-
             }else {
                 setText("");
             }
@@ -467,6 +592,7 @@ boolean isNoteDrag = false;
 
 
     }
+    private static int listViewColorCount =0;
     class CellFactoryNote extends ListCell<String>{
         @Override
         protected void updateItem(String s, boolean b) {
@@ -479,6 +605,7 @@ boolean isNoteDrag = false;
                 }else setText("");
 
             }else setText("");
+
         }
     }
 

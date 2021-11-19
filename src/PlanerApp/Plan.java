@@ -1,6 +1,11 @@
 package PlanerApp;
 
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+
+import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -25,9 +30,7 @@ private static int globalPlanKey=0; //Save
 private static ExecutorService pool = Executors.newSingleThreadExecutor();
 private static TreeMap<String,LocalDateTime> notifications = new TreeMap<String,LocalDateTime>(new ComparatorForNotes()); //Save
 public static HashMap<Integer,Plan> plans = new HashMap<Integer, Plan>(); //Save
-public static    SystemTray tray;
-public static    Image planerIcon;
-public static    TrayIcon trayIcon;
+
 
 
 private static class ComparatorForNotes implements Comparator<String>{
@@ -231,7 +234,14 @@ private static class ComparatorForNotes implements Comparator<String>{
             deleteNote(keyNote);
         }
         plans.remove(key);
-        Main.updateLists();
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                ControllerClass.updateFilteredKeysList();
+                ControllerClass.updateFilteredNoteList();
+            }
+        });
+
     }
 
     public static void deleteOldData(){
@@ -269,7 +279,7 @@ private static class ComparatorForNotes implements Comparator<String>{
         if (!note.isBefore(LocalDateTime.now().plusSeconds(2))){
             putToNotifications(key,getDifferentTime(note));}
         else {System.out.println("Выбранное время уже прошло");}
-        System.out.println("Первое оповещение " + notifications.get(notifications.firstKey())  + "::"+notifications .firstKey()+ " Последнее " + notifications.get(notifications.lastKey()));
+//        System.out.println("Первое оповещение " + notifications.get(notifications.firstKey())  + "::"+notifications .firstKey()+ " Последнее " + notifications.get(notifications.lastKey()));
     }
     //EDITED FOR TREEMAP
     public void addAlarm(LocalDateTime alarm) {
@@ -348,45 +358,31 @@ private static class ComparatorForNotes implements Comparator<String>{
         System.out.println("startNoteHere");
         System.out.println(notifications.firstKey());
         if((getNotificationType(notifications.firstKey())) == 1){
-
             System.out.println("Notification!!" + wichNotificationNow());
-            trayIcon.displayMessage("Notify!",wichNotificationNow(), MessageType.INFO);
-            removeFromNotifications(notifications.firstKey());
-            Main.updateLists();
-//            ControllerClass.updateFilteredNoteList();
+            Main.trayIcon.displayMessage("Notify!",wichNotificationNow(), MessageType.INFO);
+            deleteNote(notifications.firstKey());
             pool.execute(noteDetector);
 
             }
         else if((getNotificationType(notifications.firstKey())) == 2){
             System.out.println("Alarm!!!" + wichNotificationNow());
-            Main.alert();
-            Main.alertHeader=wichNotificationNow();
-            removeFromNotifications(notifications.firstKey());
-            Main.updateLists();
-//            ControllerClass.updateFilteredNoteList();
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    Main. showAlarmDialog(wichNotificationNow(), new Alert(Alert.AlertType.CONFIRMATION));
+                }
+            });
+            deleteNote(notifications.firstKey());
             pool.execute(noteDetector);
 
         }else if((getNotificationType(notifications.firstKey())) == 3){
             deletePlan(getNotificationPLanKey(notifications.firstKey()));
-            Main.updateLists();
+            pool.execute(noteDetector);
         }
 
 
     }
-    public static void trayNote(){
-        if (SystemTray.isSupported()){
-            try {
 
-                tray = SystemTray.getSystemTray();
-                planerIcon = Toolkit.getDefaultToolkit().getImage("trayIcon.png");
-                trayIcon = new TrayIcon(planerIcon, "your Daily Planer");
-                trayIcon.setImageAutoSize(true);
-                trayIcon.setToolTip("A daily planer notification");
-                tray.add(trayIcon);
-
-            }
-            catch (Exception err){System.err.println(err); }}
-    }
 
 
 
@@ -401,11 +397,16 @@ private static class ComparatorForNotes implements Comparator<String>{
     }
 
     public static void launchPoolNotes(){
-
         pool.execute(noteDetector);}
     public static void deleteNote(String key){
         removeFromNotifications(key);
-        Main.updateLists();
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                ControllerClass.updateFilteredNoteList();
+            }
+        });
+
     }
 
     private static Path directory = Path.of("C:\\PlanerApp");

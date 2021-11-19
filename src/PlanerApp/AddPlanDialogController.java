@@ -8,8 +8,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.io.IOException;
 import java.net.URL;
@@ -65,6 +67,14 @@ public class AddPlanDialogController extends Pane implements Initializable {
     private TextField txtNoteSeconds;
     @FXML
     private TextField txtNoteCounts;
+    @FXML
+    private CheckBox checkAutoNotes;
+    @FXML
+    private Pane paneAutoNotesInterval;
+    @FXML
+    private Pane paneAutoNotesCount;
+    @FXML
+    private Pane paneAutoNotes;
     private LocalDateTime startTime;
     private LocalDateTime finishTime;
     private Stage s = new Stage();
@@ -92,6 +102,12 @@ public class AddPlanDialogController extends Pane implements Initializable {
         s.setScene(new Scene(this));
         dateStart.setValue(LocalDate.now());
         dateFinish.setValue(LocalDate.now());
+        spinStartSeconds.setOnScroll(setScrollEvent(spinStartSeconds));
+        spinStartMinutes.setOnScroll(setScrollEvent(spinStartMinutes));
+        spinStartHours.setOnScroll(setScrollEvent(spinStartHours));
+        spinFinishSeconds.setOnScroll(setScrollEvent(spinFinishSeconds));
+        spinFinishMinutes.setOnScroll(setScrollEvent(spinFinishMinutes));
+        spinFinishHours.setOnScroll(setScrollEvent(spinFinishHours));
         checkTimeNow.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
@@ -144,21 +160,35 @@ public class AddPlanDialogController extends Pane implements Initializable {
                 ControllerClass.updateFilteredKeysList();
                 System.out.println(Plan.plans);
                 if(tglInterval.isSelected()){
-                    Plan.toPlan(key).separatePlan((long)Integer.parseInt(txtNoteYears.getText()), (long)Integer.parseInt(txtNoteMonth.getText()), (long)Integer.parseInt(txtNoteDays.getText()), (long)Integer.parseInt(txtNoteHours.getText()), (long)Integer.parseInt(txtNoteMinutes.getText()), (long)Integer.parseInt(txtNoteSeconds.getText()));
+                    if(!txtNoteSeconds.getText().equals("") && !txtNoteMinutes.getText().equals("")&& !txtNoteHours.getText().equals("") && !txtNoteDays.getText().equals("")&& !txtNoteMonth.getText().equals("")&&!txtNoteYears.getText().equals("")) {
+                        Plan.toPlan(key).separatePlan((long) Integer.parseInt(txtNoteYears.getText()), (long) Integer.parseInt(txtNoteMonth.getText()), (long) Integer.parseInt(txtNoteDays.getText()), (long) Integer.parseInt(txtNoteHours.getText()), (long) Integer.parseInt(txtNoteMinutes.getText()), (long) Integer.parseInt(txtNoteSeconds.getText()));
+                    }
                 }
                 if(tglCount.isSelected()){
-                    Plan.toPlan(key).segmentPlan(Integer.parseInt(txtNoteCounts.getText()));
-
+                    if(!txtNoteCounts.getText().equals("")) {
+                        Plan.toPlan(key).segmentPlan(Integer.parseInt(txtNoteCounts.getText()));
+                    }
                 }
+                ControllerClass.disableScene(false);
                 s.close();
 
+            }
+        });
+        checkAutoNotes.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(checkAutoNotes.isSelected()){
+                    paneAutoNotes.setVisible(true);
+                }else {paneAutoNotes.setVisible(false);}
             }
         });
         tglInterval.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent actionEvent) {
                 if(tglInterval.isSelected()){
+                    paneAutoNotesInterval.setVisible(true);
                     tglCount.setSelected(false);
+                    paneAutoNotesCount.setVisible(false);
                 }
             }
         });
@@ -166,8 +196,16 @@ public class AddPlanDialogController extends Pane implements Initializable {
             @Override
             public void handle(ActionEvent actionEvent) {
                 if(tglCount.isSelected()){
+                    paneAutoNotesCount.setVisible(true);
                     tglInterval.setSelected(false);
+                    paneAutoNotesInterval.setVisible(false);
                 }
+            }
+        });
+        s.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent windowEvent) {
+                ControllerClass.disableScene(false);
             }
         });
             }
@@ -225,5 +263,18 @@ public class AddPlanDialogController extends Pane implements Initializable {
             spinFinishSeconds.setDisable(false);
 
         }
+    }
+    private EventHandler<ScrollEvent> setScrollEvent(Spinner spinner) {
+        EventHandler<ScrollEvent> spinScrollEvent = new EventHandler<ScrollEvent>() {
+            @Override
+            public void handle(ScrollEvent scrollEvent) {
+                if (scrollEvent.getDeltaY() > 0) {
+                    spinner.increment();
+                } else {
+                    spinner.decrement();
+                }
+            }
+        };
+        return  spinScrollEvent;
     }
 }

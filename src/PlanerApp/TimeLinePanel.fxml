@@ -2,19 +2,25 @@
 
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Slider?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.text.Font?>
 
-<fx:root fx:id="mainPane"  prefWidth="200.0" type="javafx.scene.layout.HBox" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1">
+<fx:root fx:id="mainPane" prefWidth="200.0" type="javafx.scene.layout.HBox" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <Pane fx:id="paneSlider" maxWidth="90.0"  style="-fx-background-color: black;">
+      <Pane fx:id="paneSlider" maxWidth="90.0" style="-fx-background-color: #F0FFFF;">
          <children>
-            <Slider fx:id="sliderTime" layoutX="38.0" majorTickUnit="1.0" max="1440.0" minorTickCount="0" orientation="VERTICAL"  prefWidth="14.0" style="-fx-opacity: 0;" />
+            <ImageView fx:id="imgTimeLine" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" visible="false" />
+            <Slider fx:id="sliderTime" layoutX="38.0" majorTickUnit="1.0" max="1440.0" minorTickCount="0" orientation="VERTICAL" prefWidth="14.0" style="-fx-opacity: 0;" />
          </children>
       </Pane>
-      <Pane fx:id="paneTxt"  prefWidth="110.0" style="-fx-background-color: green;">
+      <Pane fx:id="paneTxt" minWidth="100.0" prefWidth="110.0">
          <children>
-            <Label fx:id="lblTime" layoutX="1.0" layoutY="209.0" />
+            <Label fx:id="lblTime" layoutX="1.0" layoutY="209.0" style="-fx-border-color: BLACK; -fx-border-radius: 10;" textAlignment="CENTER">
+               <font>
+                  <Font name="Times New Roman" size="20.0" />
+               </font></Label>
          </children>
       </Pane>
    </children>
