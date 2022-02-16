@@ -39,15 +39,17 @@ public class TimeLineController extends HBox implements Initializable {
     Label lblTime;
 @FXML
     HBox mainPane;
-@FXML
-    ImageView imgTimeLine;
     public TimeLineController(){
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("TimeLinePanel.fxml"));
-        loader.setRoot(this);
-        loader.setController(this);
-        try {
-            loader.load();
-        }catch (IOException ex){System.out.println(ex);}
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("TimeLinePanel.fxml"));
+            loader.setRoot(this);
+            loader.setController(this);
+            try {
+                loader.load();
+            }catch (IOException ex){System.out.println(ex);}
+
+//        FXMLLoader loader = new FXMLLoader(getClass().getResource(pathFxml.toUri().toURL()));
+
+
     }
 
     public void setSize(int height){
@@ -57,8 +59,6 @@ public class TimeLineController extends HBox implements Initializable {
         paneSlider.setPrefHeight(height);
         paneTxt.setPrefHeight(height);
         sliderTime.setPrefHeight(height);
-        imgTimeLine.setFitWidth(paneSlider.getMaxWidth());
-        imgTimeLine.setFitHeight(paneSlider.getMaxHeight());
         double i = 0;
         int time =1;
         while (i<height){
@@ -112,12 +112,6 @@ public class TimeLineController extends HBox implements Initializable {
         paneTxt.setMinWidth(100);
         paneSlider.setMinWidth(100);
         lblTime.setLayoutX(20);
-
-
-        try {
-            imgTimeLine.setImage(new Image(Path.of("data\\TimeLine.png").toUri().toURL().toString()));
-
-        }catch (MalformedURLException e){System.out.println(e);}
         paneSlider.setOnMouseMoved(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {

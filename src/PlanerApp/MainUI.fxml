@@ -103,5 +103,53 @@
             </Button>
          </children>
       </Pane>
+      <Pane fx:id="paneAuthorization" layoutX="365.0" layoutY="359.0" prefHeight="159.0" prefWidth="353.0" style="-fx-background-color: #20B2AA; -fx-border-width: 3; -fx-border-color: #10A199;">
+         <children>
+            <TextField fx:id="txtAuthorizationLogin" layoutX="94.0" layoutY="21.0" />
+            <TextField fx:id="txtAuthorizationPassword" layoutX="94.0" layoutY="67.0" />
+            <Button fx:id="btnAuthorizationSignUp" layoutX="270.0" layoutY="120.0" mnemonicParsing="false" text="Sign up" />
+            <Button fx:id="btnAuthorizationClose" layoutX="314.0" layoutY="9.0" mnemonicParsing="false" text="X" />
+            <Button fx:id="btnAuthorizationCreatePassword" layoutX="14.0" layoutY="120.0" mnemonicParsing="false" text="Create password" />
+            <Button fx:id="btnAuthorizationLogIn" layoutX="135.0" layoutY="120.0" mnemonicParsing="false" text="Log in" />
+            <Label layoutX="40.0" layoutY="25.0" style="-fx-text-fill: white;" text="Login">
+               <font>
+                  <Font name="Comic Sans MS" size="16.0" />
+               </font>
+            </Label>
+            <Label layoutX="20.0" layoutY="71.0" style="-fx-text-fill: white;" text="Password">
+               <font>
+                  <Font name="Comic Sans MS" size="16.0" />
+               </font>
+            </Label>
+         </children>
+      </Pane>
+      <Pane fx:id="paneAuthGeneratePass" layoutX="365.0" layoutY="38.0" prefHeight="321.0" prefWidth="525.0" style="-fx-background-color: #F0FFFF; -fx-border-width: 2; -fx-border-color: #E0EEEE;">
+         <children>
+            <TextField fx:id="txtAuthGeneratePassP" layoutX="153.0" layoutY="14.0" />
+            <TextField fx:id="txtAuthGeneratePassV" layoutX="153.0" layoutY="56.0" />
+            <TextField fx:id="txtAuthGeneratePassT" layoutX="153.0" layoutY="96.0" />
+            <Label layoutX="65.0" layoutY="18.0" text="P(Вероятность)" textAlignment="RIGHT" />
+            <Label layoutX="24.0" layoutY="49.0" prefHeight="39.0" prefWidth="127.0" text="V(Скорость перебора пар/мин)" textAlignment="RIGHT" wrapText="true" />
+            <Label layoutX="11.0" layoutY="100.0" text="T(Срок действия пароля)" textAlignment="RIGHT" />
+            <Label layoutX="37.0" layoutY="127.0" text="S*(Нижняя граница)" textAlignment="RIGHT" />
+            <Label layoutX="15.0" layoutY="152.0" text="A(Мощность алфавита)" textAlignment="RIGHT" />
+            <Label layoutX="47.0" layoutY="177.0" text="L(Длина пароля)" textAlignment="RIGHT" />
+            <CheckBox fx:id="chkAuthGeneratePassLAT" layoutX="358.0" layoutY="18.0" mnemonicParsing="false" text="ЛАТИНСКИЕ" />
+            <CheckBox fx:id="chkAuthGeneratePasslat" layoutX="358.0" layoutY="41.0" mnemonicParsing="false" text="латинские" />
+            <CheckBox fx:id="chkAuthGeneratePassRUS" layoutX="358.0" layoutY="73.0" mnemonicParsing="false" text="РУССКИЕ" />
+            <CheckBox fx:id="chkAuthGeneratePassrus" layoutX="358.0" layoutY="100.0" mnemonicParsing="false" text="русские" />
+            <CheckBox fx:id="chkAuthGeneratePassSymb" layoutX="358.0" layoutY="127.0" mnemonicParsing="false" text="Символы" />
+            <CheckBox fx:id="chkAuthGeneratePassNumb" layoutX="358.0" layoutY="152.0" mnemonicParsing="false" text="Цифры" />
+            <CheckBox fx:id="chkAuthGeneratePassCustom" layoutX="358.0" layoutY="177.0" mnemonicParsing="false" text="Свой алфавит" />
+            <TextArea fx:id="txtAuthGeneratePassCustomAlphabet" layoutX="277.0" layoutY="201.0" prefHeight="99.0" prefWidth="235.0" />
+            <Button fx:id="btnAuthGeneratePass" layoutX="21.0" layoutY="209.0" mnemonicParsing="false" text="Сгенерировать" />
+            <Label fx:id="lblAuthGeneratePassS" layoutX="177.0" layoutY="127.0" text="Label" />
+            <Label fx:id="lblAuthGeneratePassA" layoutX="177.0" layoutY="152.0" text="Label" />
+            <Label fx:id="lblAuthGeneratePassL" layoutX="177.0" layoutY="177.0" text="Label" />
+            <Button fx:id="btnAuthGeneratePassClose" layoutX="500.0" layoutY="2.0" mnemonicParsing="false" text="X" />
+            <Label fx:id="lblAuthGeneratePassPassword" layoutX="74.0" layoutY="264.0" text="Label" />
+         </children>
+      </Pane>
+      <Button fx:id="btnAuthorizationShow" layoutX="1215.0" layoutY="10.0" mnemonicParsing="false" text="LogIn" />
    </children>
 </AnchorPane>

@@ -20,15 +20,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Paint;
-import javafx.scene.shape.Line;
-import javafx.stage.Stage;
 import javafx.util.Callback;
-
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -37,7 +29,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 /*Привязка планов к графическим элементам. При создании плана через newPlan(), возвращается ключ, через который осуществляется доступ
@@ -113,6 +104,66 @@ public class ControllerClass implements Initializable {
     @FXML
     private Button btnDragClose;
     private static AnchorPane mainPaneGlobal;
+
+    /////////Authorization////////
+    @FXML
+    private Button btnAuthorizationShow;
+    @FXML
+    private Pane paneAuthorization;
+    @FXML
+    private TextField txtAuthorizationLogin;
+    @FXML
+    private TextField txtAuthorizationPassword;
+    @FXML
+    private Button btnAuthorizationSignUp;
+    @FXML
+    private Button btnAuthorizationClose;
+    @FXML
+    private Button btnAuthorizationCreatePassword;
+    @FXML
+    private Button btnAuthorizationLogIn;
+    //Generate Password
+    @FXML
+    private Pane paneAuthGeneratePass;
+    @FXML
+    private TextField txtAuthGeneratePassP;
+    @FXML
+    private TextField txtAuthGeneratePassV;
+    @FXML
+    private TextField txtAuthGeneratePassT;
+    @FXML
+    private Label lblAuthGeneratePassS;
+    @FXML
+    private Label lblAuthGeneratePassA;
+    @FXML
+    private Label lblAuthGeneratePassL;
+    @FXML
+    private Label lblAuthGeneratePassPassword;
+    @FXML
+    private CheckBox chkAuthGeneratePassLAT;
+    @FXML
+    private CheckBox chkAuthGeneratePasslat;
+    @FXML
+    private CheckBox chkAuthGeneratePassRUS;
+    @FXML
+    private CheckBox chkAuthGeneratePassrus;
+    @FXML
+    private CheckBox chkAuthGeneratePassSymb;
+    @FXML
+    private CheckBox chkAuthGeneratePassNumb;
+    @FXML
+    private CheckBox chkAuthGeneratePassCustom;
+    @FXML
+    private TextArea txtAuthGeneratePassCustomAlphabet;
+    @FXML
+    private Button btnAuthGeneratePass;
+    @FXML
+    private Button btnAuthGeneratePassClose;
+
+/////Authorization\\\\\\
+
+
+
 //    public static void hBoxAddPlan(LocalDateTime start, LocalDateTime finish, String head, String body){
 ////        PlanPanelController p1 = new PlanPanelController(head, body,start,finish);
 ////        hBoxPlans.getChildren().add(p1);
@@ -330,7 +381,7 @@ boolean isNoteDrag = false;
         gridPanePlanPanels.setHgap(10);
         imgNoteDrag.toFront();
 
-        Path imgNote = Path.of("data\\NotificationIcon.png");
+        Path imgNote = Path.of(Main.PATH + "\\src\\NotificationIcon.png");
         try {
             imgIconDrag = new Image(imgNote.toUri().toURL().toString());
         }catch (MalformedURLException e){System.out.println(e);}
@@ -546,6 +597,121 @@ boolean isNoteDrag = false;
             @Override
             public void handle(ActionEvent actionEvent) {
                 showInputDrag(false);
+            }
+        });
+        ///Authorization
+        paneAuthorization.setVisible(false);
+        paneAuthorization.setDisable(true);
+        paneAuthGeneratePass.setDisable(true);
+        paneAuthGeneratePass.setVisible(false);
+        btnAuthorizationShow.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                paneAuthorization.setVisible(!false);
+                paneAuthorization.setDisable(!true);
+            }
+        });
+        btnAuthorizationCreatePassword.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                paneAuthGeneratePass.setDisable(!true);
+                paneAuthGeneratePass.setVisible(!false);
+            }
+        });
+        btnAuthorizationClose.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                paneAuthorization.setVisible(false);
+                paneAuthorization.setDisable(true);
+            }
+        });
+        btnAuthGeneratePassClose.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                paneAuthGeneratePass.setDisable(true);
+                paneAuthGeneratePass.setVisible(false);
+            }
+        });
+        chkAuthGeneratePassLAT.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(chkAuthGeneratePassLAT.isSelected()){
+                    Authorization.plusAbcUpper();
+                }else {Authorization.minusAbcUpper();}
+            }
+        });
+        chkAuthGeneratePasslat.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(chkAuthGeneratePasslat.isSelected()){
+                    Authorization.plusAbc();
+                }else {Authorization.minusAbc();}
+            }
+        });
+        chkAuthGeneratePassRUS.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(chkAuthGeneratePassRUS.isSelected()){
+                    Authorization.plusRusUpper();
+                }else {Authorization.minusRusUpper();}
+            }
+        });
+        chkAuthGeneratePassrus.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(chkAuthGeneratePassrus.isSelected()){
+                    Authorization.plusRus();
+                }else {Authorization.minusRus();}
+            }
+        });
+        chkAuthGeneratePassNumb.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(chkAuthGeneratePassNumb.isSelected()){
+                    Authorization.plusNumbers();
+                }else{Authorization.minusNumbers();}
+            }
+        });
+        chkAuthGeneratePassSymb.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(chkAuthGeneratePassSymb.isSelected()){
+                    Authorization.plusSymbols();
+                }else {Authorization.minusSymbols();}
+            }
+        });
+        chkAuthGeneratePassCustom.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(chkAuthGeneratePassCustom.isSelected()){
+
+                    chkAuthGeneratePassRUS.setSelected(false);
+                    chkAuthGeneratePassrus.setSelected(false);
+                    chkAuthGeneratePassLAT.setSelected(false);
+                    chkAuthGeneratePasslat.setSelected(false);
+                    chkAuthGeneratePassSymb.setSelected(false);
+                    chkAuthGeneratePassNumb.setSelected(false);
+                }
+            }
+        });
+        btnAuthGeneratePass.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if(chkAuthGeneratePassCustom.isSelected()){
+                    Authorization.customAlphabet(txtAuthGeneratePassCustomAlphabet.getText());
+                }
+                String[]s = Authorization.generatePassword(Double.parseDouble(txtAuthGeneratePassP.getText()),Double.parseDouble(txtAuthGeneratePassV.getText()), Double.parseDouble(txtAuthGeneratePassT.getText()));
+                lblAuthGeneratePassPassword.setText(s[0]);
+                lblAuthGeneratePassS.setText(s[1]);
+                lblAuthGeneratePassA.setText(s[2]);
+                lblAuthGeneratePassL.setText(s[3]);
+                chkAuthGeneratePassRUS.setSelected(false);
+                chkAuthGeneratePassrus.setSelected(false);
+                chkAuthGeneratePassLAT.setSelected(false);
+                chkAuthGeneratePasslat.setSelected(false);
+                chkAuthGeneratePassSymb.setSelected(false);
+                chkAuthGeneratePassNumb.setSelected(false);
+                chkAuthGeneratePassCustom.setSelected(false);
             }
         });
     }

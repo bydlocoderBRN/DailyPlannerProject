@@ -1,33 +1,23 @@
 package PlanerApp;
 
-import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.MenuItem;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseListener;
-import java.io.File;
-
-import java.lang.management.PlatformManagedObject;
-import java.nio.file.Files;
+import java.io.IOException;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.function.Function;
+
 
 
 public class Main extends Application{
@@ -38,9 +28,10 @@ public class Main extends Application{
 * (runlater запускает fx поток через некоторое неопределеное время), что позволяет сначала отключить таймер,
 *  а потом вызвать диалоговое окно */
 //    private static Alert alertAlarm = new Alert(Alert.AlertType.CONFIRMATION);
+    public static Path PATH;
     private static Pane root;
     private static Stage stageLocal;
-    public static TimeLineController timeLine1 = new TimeLineController();
+    public static TimeLineController timeLine1;
     private static Sound alarm;
     public static    SystemTray tray;
     public static java.awt.Image planerIcon;
@@ -48,7 +39,6 @@ public class Main extends Application{
     private static MenuItem menuClose =new MenuItem("Exit");
     private static MenuItem menuOpen =new MenuItem("Open");
     private static PopupMenu popupMenu = new PopupMenu();
-
 
     public static void showAlarmDialog(String s, Alert alertAlarm){
 
@@ -66,7 +56,8 @@ public class Main extends Application{
             alertAlarm.close();
         }
     }
-    private static Alert alertClose = new Alert(Alert.AlertType.CONFIRMATION);
+
+    private static Alert alertClose;
     private static void showCloseDialog(){
         alertClose.setHeaderText("Hide or exit?");
         alertClose.setContentText("Do you want to hide the application instead of exiting it?");
@@ -108,8 +99,12 @@ public class Main extends Application{
         if (SystemTray.isSupported()){
             try {
                 tray = SystemTray.getSystemTray();
-                Path trayIconPath = Path.of("data\\trayIcon.png");
-                planerIcon = ImageIO.read(trayIconPath.toFile());
+
+                Path trayIconPath = Path.of(PATH + "\\src\\trayIcon.png");
+                try {
+                    planerIcon = ImageIO.read(trayIconPath.toFile());
+                }catch (IOException e){System.out.println(e + " thisistray " + trayIconPath.toAbsolutePath().toString());}
+
                 trayIcon = new TrayIcon(planerIcon, "your Daily Planer");
                 trayIcon.setImageAutoSize(true);
                 trayIcon.setToolTip("A daily planer notification");
@@ -156,9 +151,14 @@ public class Main extends Application{
     }
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage stage) {
+        System.out.println();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("MainUI.fxml"));
-        root = (Pane) loader.load();
+        timeLine1 = new TimeLineController();
+        try{
+            root = (Pane) loader.load();}
+        catch (IOException e){System.out.println(e.getCause());}
+        alertClose = new Alert(Alert.AlertType.CONFIRMATION);
 
         timeLine1.setSize((int)root.getPrefHeight());
         root.getChildren().add(timeLine1);
@@ -182,11 +182,18 @@ public class Main extends Application{
             }
         });
 
-        alarm = new Sound(Path.of("data\\Alarm.wav").toFile());
+        alarm = new Sound(Path.of(PATH + "\\src\\Alarm.wav").toFile());
 
     }
+
     public static void main(String[] args) throws Exception{
+        System.out.println("MainYes");
+        App a = new App();
+        PATH = a.getPath();
+
+        System.out.println("TO  URI = " + a.getPath());
         Application.launch(args);
+
 
 
 }

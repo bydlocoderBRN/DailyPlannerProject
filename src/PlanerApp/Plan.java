@@ -2,11 +2,6 @@ package PlanerApp;
 
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
-
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Files;
@@ -409,7 +404,7 @@ private static class ComparatorForNotes implements Comparator<String>{
 
     }
 
-    private static Path directory = Path.of("C:\\PlanerApp");
+    private static Path directory = Main.PATH;
     private static Path saveDirectory = Path.of(directory + "\\data");
     private static Path savePlanFile = Path.of(saveDirectory + "\\planData.txt");
     private static Path saveNotesFile = Path.of(saveDirectory+ "\\notificationsData.txt");
@@ -590,6 +585,7 @@ private static void savePlans(){
         }
     }
     public static void save(){
+        System.out.println(saveDirectory);
         savePlans();
         saveNotes();
         saveGlobalProperties();
